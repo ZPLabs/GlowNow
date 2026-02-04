@@ -11,13 +11,13 @@ GlowNow is a multi-tenant SaaS platform for booking and business management in t
 ```bash
 # Development (from repo root)
 npm run dev                        # Start all apps
-npx turbo dev --filter=web         # Start only web app (port 3000)
-npx turbo dev --filter=api         # Start only API (port 5249)
+npx turbo dev --filter=@glownow/web  # Start only web app (port 3000)
+npx turbo dev --filter=@glownow/api  # Start only API (port 5249)
 
 # Build
 npm run build                      # Build all apps
-npx turbo build --filter=web       # Build specific app
-npx turbo build --filter=api       # Build .NET API
+npx turbo build --filter=@glownow/web  # Build specific app
+npx turbo build --filter=@glownow/api  # Build .NET API
 
 # .NET API (from apps/api)
 dotnet build GlowNow.Api.sln      # Build API solution
@@ -34,15 +34,15 @@ npm run check-types                # TypeScript type checking across all package
 **Monorepo layout (Turborepo + npm workspaces):**
 
 - `apps/web` — Next.js 16 web app (React 19, CSS Modules)
-- `apps/mobile` — Planned Expo mobile app (empty)
+- `apps/mobile` — Expo mobile app (React Native, TypeScript)
 - `apps/api` — .NET 10 API (Clean Architecture: Api → Application → Domain, Api → Infrastructure → Application → Domain)
-- `packages/ui` — Shared React component library (`@repo/ui`)
+- `packages/ui` — Shared React component library (`@glownow/ui`)
 - `packages/eslint-config` — Shared ESLint configs (base + Next.js)
 - `packages/typescript-config` — Shared TypeScript configs (base, nextjs, react-library)
 
 **Turborepo task pipeline:** Build and lint tasks have `dependsOn: ["^<task>"]`, meaning upstream packages build/lint first. Dev tasks skip caching.
 
-**Package references:** Apps import shared packages via `@repo/ui`, `@repo/eslint-config`, `@repo/typescript-config` workspace references.
+**Package references:** Apps import shared packages via `@glownow/ui`, `@glownow/eslint-config`, `@glownow/typescript-config` workspace references.
 
 ## Key Configuration
 
