@@ -12,6 +12,53 @@ GlowNow is a multi-tenant SaaS platform for booking and business management in t
 | Monorepo | Turborepo 2.8, npm workspaces      |
 | Language | TypeScript 5.9, C# 14              |
 
+## System diagram
+
+```mermaid
+graph TB
+    subgraph Clients
+        Web["Web App<br/>(Next.js 16)"]
+        Mobile["Mobile App<br/>(Expo / React Native)"]
+    end
+
+    subgraph API["API Layer"]
+        Gateway["ALB / HTTPS"]
+        DotNet[".NET 10 API<br/>(Clean Architecture)"]
+    end
+
+    subgraph Data["Data & Storage"]
+        Postgres[("PostgreSQL<br/>(multi-tenant)")]
+        S3[("S3<br/>Assets & Uploads")]
+    end
+
+    subgraph External["External Services"]
+        SES["SES / SendGrid<br/>(Email)"]
+        Twilio["Twilio<br/>(SMS)"]
+    end
+
+    subgraph Shared["Shared Packages"]
+        UI["@glownow/ui"]
+        ESLint["@glownow/eslint-config"]
+        TSConfig["@glownow/typescript-config"]
+    end
+
+    Web -->|HTTPS| Gateway
+    Mobile -->|HTTPS| Gateway
+    Gateway --> DotNet
+    DotNet --> Postgres
+    DotNet --> S3
+    DotNet --> SES
+    DotNet --> Twilio
+
+    Web -.->|imports| UI
+    UI -.->|uses| ESLint
+    UI -.->|uses| TSConfig
+    Web -.->|uses| ESLint
+    Web -.->|uses| TSConfig
+```
+
+> **Solid lines** = runtime communication. **Dashed lines** = build-time dependencies. Data stores marked with `(multi-tenant)` use `business_id` row-level filtering. External services and infrastructure (ALB, PostgreSQL, S3) are **planned** — see [Infrastructure](#infrastructure-planned).
+
 ## Repository structure
 
 ```
@@ -32,6 +79,7 @@ GlowNow/
 │   ├── typescript-config/    # Shared tsconfig bases
 │   └── ui/                   # Shared React component library
 ├── docs/
+│   ├── ARCHITECTURE.md       # This file
 │   └── PRD.md                # Product requirements
 ├── turbo.json                # Turborepo pipeline config
 └── package.json              # Root workspaces & scripts
