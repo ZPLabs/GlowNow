@@ -1,0 +1,10 @@
+# .NET build outputs
+bin/
+obj/
+
+# IDE
+.vs/
+*.user
+
+# User secrets
+secrets.json
