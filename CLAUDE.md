@@ -1,0 +1,50 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+GlowNow is a multi-tenant SaaS platform for booking and business management in the beauty/wellness industry, targeting Ecuador (Cuenca). It's an early-stage MVP built as a Turborepo monorepo with TypeScript throughout.
+
+## Commands
+
+```bash
+# Development (from repo root)
+npm run dev                        # Start all apps
+npx turbo dev --filter=web         # Start only web app (port 3000)
+
+# Build
+npm run build                      # Build all apps
+npx turbo build --filter=web       # Build specific app
+
+# Linting & Formatting
+npm run lint                       # Lint all packages (zero warnings enforced)
+npm run format                     # Prettier on all .ts/.tsx/.md files
+npm run check-types                # TypeScript type checking across all packages
+```
+
+## Architecture
+
+**Monorepo layout (Turborepo + npm workspaces):**
+
+- `apps/web` — Next.js 16 web app (React 19, CSS Modules)
+- `apps/mobile` — Planned Expo mobile app (empty)
+- `apps/api` — Planned .NET API (empty)
+- `packages/ui` — Shared React component library (`@repo/ui`)
+- `packages/eslint-config` — Shared ESLint configs (base + Next.js)
+- `packages/typescript-config` — Shared TypeScript configs (base, nextjs, react-library)
+
+**Turborepo task pipeline:** Build and lint tasks have `dependsOn: ["^<task>"]`, meaning upstream packages build/lint first. Dev tasks skip caching.
+
+**Package references:** Apps import shared packages via `@repo/ui`, `@repo/eslint-config`, `@repo/typescript-config` workspace references.
+
+## Key Configuration
+
+- **Node >= 18**, npm 10.9.2, TypeScript 5.9.2
+- **TypeScript strict mode** enabled across all packages
+- **ESLint** uses `eslint-plugin-turbo`, `typescript-eslint`, and `eslint-config-prettier`; the `only-warn` plugin converts errors to warnings, but the web app lint script enforces `--max-warnings 0`
+- **No test framework** configured yet
+
+## Product Context
+
+The PRD lives at `docs/PRD.md`. Key planned features: business self-registration with RUC validation, service catalog, team scheduling, real-time availability booking engine, email/SMS notifications, multi-role permissions (Owner, Manager, Staff, Receptionist, Client).
