@@ -11,8 +11,8 @@
 | Name | Role | Responsibility |
 |------|------|----------------|
 | Mario | Lead Dev | Architecture, .NET API, Next.js, Expo Mobile |
-| Juan Pablo (Jimpol) | Infrastructure | AWS, Terraform, Security, CI/CD |
-| Patricio (Pato) | PM/QA | Business logic, User Stories, QA |
+| Juan Pablo | Infrastructure | AWS, Terraform, Security, CI/CD |
+| Patricio | PM/QA | Business logic, User Stories, QA |
 
 ---
 

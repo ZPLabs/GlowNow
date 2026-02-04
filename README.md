@@ -1,135 +1,77 @@
-# Turborepo starter
+# GlowNow
 
-This Turborepo starter is maintained by the Turborepo core team.
+Multi-tenant SaaS platform for booking and business management in the beauty and wellness industry — built for Ecuador, starting in Cuenca.
 
-## Using this example
+## Why GlowNow?
 
-Run the following command:
+Ecuador's wellness sector lacks a professional, localized booking solution. International platforms don't address local compliance (RUC/SRI), payment methods, or regional needs. GlowNow fills this gap.
 
-```sh
-npx create-turbo@latest
-```
+## Monorepo Structure
 
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+This project is organized as a [Turborepo](https://turborepo.dev) monorepo:
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+apps/
+  web/        Next.js 16 — client-facing booking and business dashboard
+  api/        .NET 10 — REST API (clean architecture)
+  mobile/     Expo — planned mobile app
+packages/
+  ui/         Shared React component library (@repo/ui)
+  eslint-config/    Shared ESLint configs
+  typescript-config/ Shared TypeScript configs
+docs/
+  PRD.md      Product Requirements Document
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Prerequisites
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+- **Node.js** >= 18 and npm 10.9.2+
+- **.NET SDK** 10.0.100+
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+## Getting Started
 
-### Develop
+```bash
+# Install dependencies
+npm install
 
-To develop all apps and packages, run the following command:
+# Start all apps (web on :3000, API on :5249)
+npm run dev
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
+# Start a specific app
 npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+npx turbo dev --filter=api
 ```
 
-### Remote Caching
+## Commands
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+npm run build          # Build all apps and packages
+npm run lint           # Lint everything (zero warnings enforced)
+npm run format         # Prettier on all .ts/.tsx/.md files
+npm run check-types    # TypeScript type checking
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## MVP Scope
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+The initial release targets:
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+- **Business onboarding** with RUC validation (Ecuador tax ID)
+- **Service catalog** with categories, pricing, duration, and buffer times
+- **Team management** with role-based permissions (Owner, Manager, Staff, Receptionist)
+- **Shift scheduling** with repeating patterns and time-off
+- **Booking engine** with real-time availability, online and walk-in flows
+- **Notifications** via email and SMS (confirmation, reminders, cancellations)
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+See [`docs/PRD.md`](docs/PRD.md) for the full product requirements.
 
-## Useful Links
+## Team
 
-Learn more about the power of Turborepo:
+| Name | Role |
+|------|------|
+| Mario | Lead Dev — Architecture, .NET API, Next.js, Expo Mobile |
+| Juan Pablo (Jimpol) | Infrastructure — AWS, Terraform, Security, CI/CD |
+| Patricio (Pato) | PM/QA — Business logic, User Stories, QA |
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+## License
+
+Private — All rights reserved.
