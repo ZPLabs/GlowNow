@@ -64,12 +64,22 @@ graph TB
 ```
 GlowNow/
 ├── apps/
-│   ├── api/                  # .NET 10 API (Clean Architecture)
+│   ├── api/                  # .NET 10 API (Modular Monolith)
 │   │   ├── src/
-│   │   │   ├── GlowNow.Api/           # Host, DI, endpoints
-│   │   │   ├── GlowNow.Application/   # Use cases, interfaces
-│   │   │   ├── GlowNow.Domain/        # Entities, value objects
-│   │   │   └── GlowNow.Infrastructure/# External concerns, persistence
+│   │   │   ├── GlowNow.Api/             # Host, DI, middleware, endpoints
+│   │   │   ├── GlowNow.Shared/          # Cross-cutting: base classes, value objects, multi-tenancy
+│   │   │   └── Modules/
+│   │   │       ├── GlowNow.Identity/    # Auth, JWT, users, roles
+│   │   │       ├── GlowNow.Business/    # Tenant registration, settings, operating hours
+│   │   │       ├── GlowNow.Catalog/     # Services, categories, pricing
+│   │   │       ├── GlowNow.Team/        # Staff, shifts, blocked time, availability
+│   │   │       ├── GlowNow.Clients/     # Client profiles, search, history
+│   │   │       ├── GlowNow.Booking/     # Availability calculation, appointments
+│   │   │       └── GlowNow.Notifications/ # Email/SMS dispatch via domain events
+│   │   ├── tests/
+│   │   │   ├── Unit/                     # xUnit unit tests per module
+│   │   │   ├── Integration/              # Testcontainers integration tests
+│   │   │   └── Api/                      # WebApplicationFactory API tests
 │   │   ├── Directory.Build.props       # Shared .NET project settings
 │   │   └── GlowNow.Api.sln
 │   ├── mobile/               # Expo / React Native app
@@ -107,14 +117,15 @@ Defined in `turbo.json`:
 ### `@glownow/api` — API
 
 - **Framework**: .NET 10 minimal API
-- **Architecture**: Clean Architecture with four projects:
-  - **Api** — Host, dependency injection, endpoint mapping
-  - **Application** — Use cases, service interfaces
-  - **Domain** — Entities, value objects, domain logic
-  - **Infrastructure** — External integrations, persistence
+- **Stack**: PostgreSQL, EF Core, MediatR (CQRS), FluentValidation, Scalar (OpenAPI)
+- **Architecture**: Modular monolith with Clean Architecture per module:
+  - **Api** — Host, dependency injection, middleware, minimal API endpoint mapping
+  - **Shared** — Cross-cutting base classes, value objects, multi-tenancy
+  - **Modules/** — Domain-specific modules (Identity, Business, Catalog, Team, Clients, Booking, Notifications), each with its own Domain, Application, and Infrastructure layers
 - **Port**: 5249
-- **Endpoints**: `GET /health` (health check)
+- **Endpoints**: `GET /health` (liveness), `GET /health/ready` (readiness — DB, external services)
 - **Shared props**: `Directory.Build.props` enforces `net10.0`, nullable enabled, implicit usings, warnings-as-errors
+- **Testing**: xUnit + NSubstitute (unit), Testcontainers (integration), WebApplicationFactory (end-to-end)
 
 ### `@glownow/mobile` — Mobile application
 
@@ -163,11 +174,11 @@ Shared `tsconfig` bases:
 │  │ (Next.js)│   │ (Expo)   │   │  (.NET solution)  │   │
 │  └────┬─────┘   └──────────┘   └───────────────────┘   │
 │       │                         │                       │
-│       ▼                         ▼ (.NET project refs)   │
-│  ┌─────────┐              Api ──► Application           │
-│  │   ui    │              Api ──► Infrastructure         │
-│  └─────────┘              Infrastructure ──► Application │
-│       │                   Application ──► Domain         │
+│       ▼                         ▼ (.NET modular monolith)│
+│  ┌─────────┐              Api ──► Shared                │
+│  │   ui    │              Api ──► Modules/*              │
+│  └─────────┘              Module layers: Domain ◄── App │
+│       │                   Modules depend on Shared only  │
 │  Uses:│                                                 │
 │  eslint-config                                          │
 │  typescript-config                                      │
@@ -180,9 +191,9 @@ Shared `tsconfig` bases:
 - **Zero-warning lint policy** enforced via `--max-warnings 0`
 - **Warnings-as-errors** in .NET via `Directory.Build.props`
 - **CSS Modules** for styling in the web app (no CSS-in-JS)
-- **Clean Architecture** in .NET: dependencies point inward (Api/Infrastructure → Application → Domain)
+- **Modular monolith** in .NET: domain-specific modules with Clean Architecture per module (Domain ← Application ← Infrastructure)
 - **Direct TSX exports** from the UI package (no pre-compilation step)
-- **No test framework** configured yet
+- **xUnit** for testing (unit, integration, API), with NSubstitute for mocking and Testcontainers for database tests
 
 ## Development commands
 
@@ -199,15 +210,13 @@ Shared `tsconfig` bases:
 
 ---
 
-## Target architecture (planned)
+## Modular monolith architecture
 
-> **Note:** Everything below this line describes the **planned/target** architecture. It has not been implemented yet. The sections above reflect the current state of the codebase.
+### Domain modules
 
-### Modular monolith evolution
+Each module is a self-contained vertical slice owning its entities, use cases, and infrastructure while sharing the same deployment unit.
 
-The current Clean Architecture scaffold (Api / Application / Domain / Infrastructure) will evolve into a **modular monolith** with domain-specific modules. Each module owns its entities, use cases, and infrastructure while sharing the same deployment unit.
-
-**Planned domain modules:**
+**Modules:**
 
 | Module | Responsibility |
 |--------|---------------|
@@ -220,22 +229,59 @@ The current Clean Architecture scaffold (Api / Application / Domain / Infrastruc
 | Notifications | Email/SMS dispatch, templates, delivery tracking |
 | Shared | Cross-cutting: multi-tenancy, audit, common value objects |
 
-**Planned `src/` structure:**
+**Module dependency order (top depends on bottom):**
+
+```
+Booking → Team, Catalog, Clients
+Team → Identity, Catalog
+Clients → Identity (optional)
+Identity, Business, Catalog → Shared only
+Notifications → Shared only (listens to domain events)
+Shared → nothing (foundation)
+```
+
+Dependencies are **acyclic** — never create circular references between modules. Modules communicate via **direct service interfaces** (synchronous) or **domain events** (asynchronous).
+
+**`src/` structure:**
 
 ```
 apps/api/src/
 ├── GlowNow.Api/                  # Host, DI, middleware, endpoint mapping
-├── GlowNow.Application/          # Shared application abstractions
-├── GlowNow.Domain/               # Shared domain primitives
-├── GlowNow.Infrastructure/       # Shared infra (EF Core, email, SMS)
+├── GlowNow.Shared/               # Cross-cutting: base classes, value objects, multi-tenancy
 └── Modules/
-    ├── GlowNow.Identity/
-    ├── GlowNow.Business/
-    ├── GlowNow.Catalog/
-    ├── GlowNow.Team/
-    ├── GlowNow.Booking/
-    ├── GlowNow.Clients/
-    └── GlowNow.Notifications/
+    ├── GlowNow.Identity/         # Auth, JWT, users, roles
+    ├── GlowNow.Business/         # Tenant registration, settings, operating hours
+    ├── GlowNow.Catalog/          # Services, categories, pricing
+    ├── GlowNow.Team/             # Staff, shifts, blocked time, availability
+    ├── GlowNow.Clients/          # Client profiles, search, history
+    ├── GlowNow.Booking/          # Availability calculation, appointments
+    └── GlowNow.Notifications/    # Email/SMS dispatch via domain events
+```
+
+**Per-module file organization:**
+
+```
+GlowNow.{Module}/
+├── Domain/
+│   ├── Entities/              # Aggregate roots and entities
+│   ├── ValueObjects/          # Module-specific value objects
+│   ├── Events/                # Domain events
+│   ├── Enums/                 # Domain enumerations
+│   ├── Errors/                # Domain error definitions
+│   └── Services/              # Domain services (pure logic)
+├── Application/
+│   ├── Commands/              # One folder per command (Command + Handler + Validator)
+│   ├── Queries/               # One folder per query (Query + Handler + Response)
+│   ├── Interfaces/            # Port interfaces (repositories, external services)
+│   ├── Mappings/              # Entity ↔ Response mappings
+│   └── EventHandlers/         # Handlers for domain events from other modules
+├── Infrastructure/
+│   ├── Persistence/
+│   │   ├── Configurations/    # EF Core entity configurations (Fluent API)
+│   │   ├── Repositories/      # Repository implementations
+│   │   └── Migrations/        # EF Core migrations (if module-specific)
+│   └── Services/              # External service implementations
+└── {Module}Module.cs          # DI registration entry point
 ```
 
 ### Multi-tenancy strategy
@@ -245,9 +291,62 @@ apps/api/src/
 - **Resolution:** `X-Business-Id` HTTP header, validated against the authenticated user's business memberships
 - **Isolation guarantee:** Row-level filtering — no tenant can access another tenant's data
 
+### Domain-Driven Design
+
+- **Entities** have identity (`Entity<TId>`), encapsulate behavior, and protect invariants — no anemic models.
+- **Value Objects** are immutable, compared by value (e.g., `PhoneNumber`, `RUC`, `Email`, `Money`).
+- **Aggregate Roots** (`AggregateRoot<TId>`) are the only entry points for persistence operations.
+- **Domain Events** signal something meaningful happened (e.g., `AppointmentConfirmedEvent`, `BusinessRegisteredEvent`).
+- **Domain Services** handle logic that doesn't belong to a single entity.
+
+### CQRS with MediatR
+
+Every use case is a **Command** (write) or **Query** (read) dispatched through MediatR. One file per command/query, one file per handler, one file per validator, grouped in a folder.
+
+- Commands return `Result<T>` or `Result` (never throw for business rule violations).
+- Queries return DTOs/response records, never domain entities.
+- Validators use FluentValidation and run automatically via MediatR pipeline behavior.
+
+### Result pattern
+
+All Application layer returns use the Result pattern. Exceptions are reserved for unexpected failures, not business rule violations. Error definitions live in each module's `Domain/Errors/` folder.
+
+### MediatR Pipeline Behaviors
+
+Registered in this order:
+
+1. **LoggingBehavior** — Log every request/response with correlation ID.
+2. **ValidationBehavior** — Run FluentValidation; return errors before handler executes.
+3. **TransactionBehavior** — Wrap commands in a database transaction (queries are read-only).
+4. **PerformanceBehavior** — Log slow requests (> 500ms warning, > 1000ms error).
+
+### Repository pattern
+
+- One repository interface per aggregate root, defined in `Application/Interfaces/`.
+- Implementation in `Infrastructure/Persistence/Repositories/`.
+- Repositories return domain entities, never EF Core models or DTOs.
+- `IUnitOfWork` for transaction management.
+
+### Domain Events + Outbox pattern
+
+- Domain events are raised inside aggregate roots via `AddDomainEvent()`.
+- Events are dispatched **after** `SaveChangesAsync()` succeeds (outbox pattern for reliability).
+- Notifications module listens to events — no direct coupling.
+
+### Structured logging
+
+- `ILogger<T>` everywhere — never `Console.WriteLine`.
+- **Correlation IDs** propagated via middleware on all log entries.
+- Structured properties, not string interpolation.
+
+### Resilience (Polly)
+
+- Circuit breaker + retry with exponential backoff on external service calls (Twilio, SendGrid).
+- Fallback: if SMS fails, log and don't block the booking flow.
+
 ---
 
-## Data model (planned)
+## Data model
 
 ### Core entities
 
@@ -300,7 +399,19 @@ erDiagram
 
 ---
 
-## API design (planned)
+## API design
+
+### API versioning
+
+- All endpoints are prefixed with `/api/v1/`.
+- URL-based versioning (`/api/v2/` when breaking changes are needed).
+- Never remove v1 endpoints without a deprecation period.
+
+### OpenAPI / Scalar
+
+- All endpoints documented via Scalar.
+- Use `.WithDescription()`, `.Produces<T>()`, `.ProducesProblem()` on endpoint definitions.
+- Response types are explicitly declared.
 
 ### Authentication
 
@@ -313,13 +424,13 @@ erDiagram
 
 | Group | Base path | Key operations |
 |-------|-----------|---------------|
-| Auth | `/api/auth` | Register, login, refresh, logout, me |
-| Business | `/api/businesses` | Create, get, update settings, operating hours |
-| Services | `/api/services` | CRUD services, categories, staff assignments |
-| Team | `/api/team` | Invite member, list staff, update role, manage shifts |
-| Availability | `/api/availability` | Get available slots (public, no auth required) |
-| Appointments | `/api/appointments` | Book, reschedule, cancel, mark no-show, list |
-| Clients | `/api/clients` | CRUD client records, search by phone/name, booking history |
+| Auth | `/api/v1/auth` | Register, login, refresh, logout, me |
+| Business | `/api/v1/businesses` | Create, get, update settings, operating hours |
+| Services | `/api/v1/services` | CRUD services, categories, staff assignments |
+| Team | `/api/v1/team` | Invite member, list staff, update role, manage shifts |
+| Availability | `/api/v1/availability` | Get available slots (public, no auth required) |
+| Appointments | `/api/v1/appointments` | Book, reschedule, cancel, mark no-show, list |
+| Clients | `/api/v1/clients` | CRUD client records, search by phone/name, booking history |
 
 ### Standard response format
 
@@ -364,7 +475,7 @@ erDiagram
 
 ---
 
-## Key flows (planned)
+## Key flows
 
 ### Online booking flow
 
@@ -376,16 +487,16 @@ sequenceDiagram
     participant DB as Database
 
     C->>W: Select business
-    W->>A: GET /api/services?business_id=X
+    W->>A: GET /api/v1/services?business_id=X
     A-->>W: Service list with pricing
 
     C->>W: Select service + staff (or "Any")
-    W->>A: GET /api/availability?service_id=S&staff_id=T&date=D
+    W->>A: GET /api/v1/availability?service_id=S&staff_id=T&date=D
     A->>DB: Query shifts, blocked time, existing appointments
     A-->>W: Available time slots
 
     C->>W: Select time slot
-    W->>A: POST /api/appointments
+    W->>A: POST /api/v1/appointments
     A->>DB: Verify slot still available (optimistic lock)
     A->>DB: Create appointment (status: confirmed)
     A-->>W: Appointment confirmation
@@ -456,7 +567,7 @@ infra/
 
 ---
 
-## Security (planned)
+## Security
 
 ### Authentication & authorization
 
@@ -467,7 +578,7 @@ infra/
 
 ### API security
 
-- **Rate limiting:** Per-IP and per-user token bucket
+- **Rate limiting:** Per-IP and per-user token bucket; stricter on public endpoints (availability, booking). Returns `429` with `Retry-After` header.
 - **Input validation:** FluentValidation on all request DTOs
 - **CORS:** Whitelist of allowed origins (web app domain only)
 - **Headers:** Standard security headers (HSTS, X-Content-Type-Options, X-Frame-Options)
@@ -478,3 +589,45 @@ infra/
 - **At rest:** RDS encryption enabled (AES-256)
 - **Audit logging:** All write operations logged with user_id, business_id, timestamp
 - **Tenant isolation:** EF Core global filters + integration tests verifying cross-tenant queries return empty
+
+---
+
+## Testing strategy
+
+### Test projects
+
+| Project | Framework | Purpose | What to test |
+|---------|-----------|---------|-------------|
+| `tests/GlowNow.UnitTests/` | xUnit + NSubstitute | Isolated logic | Domain entities, value objects, handlers, validators, domain services |
+| `tests/GlowNow.IntegrationTests/` | xUnit + Testcontainers | DB + infra | Repositories, EF Core configs, multi-tenancy filters, query correctness |
+| `tests/GlowNow.ApiTests/` | xUnit + WebApplicationFactory | End-to-end | Full HTTP request/response, auth, status codes, response shapes |
+
+### Testing conventions
+
+- **Test naming:** `MethodName_Should_ExpectedBehavior_When_Condition`
+- **Arrange-Act-Assert** pattern in every test.
+- **One assertion per test** (prefer multiple small tests over one large test).
+- Domain entities and value objects must have comprehensive unit tests.
+- Every command handler should have tests for success and failure paths.
+- Availability calculation must have exhaustive edge case tests.
+- Multi-tenancy isolation must be verified in integration tests (cross-tenant queries return empty).
+
+---
+
+## Database migrations
+
+- Version-controlled via EF Core migrations.
+- Migrations run automatically on startup in dev, manually in staging/production.
+- Never edit existing migrations — create new ones.
+- Migration naming: `{Timestamp}_{Description}.cs` (e.g., `20260201_AddAppointmentTable.cs`).
+
+---
+
+## Ecuador-specific rules
+
+- **RUC validation:** 13 digits for businesses, 10 for cédula. Validate check digit algorithm.
+- **Phone format:** `+593 9X XXX XXXX` for mobile.
+- **Currency:** USD — use `decimal` for all money values, never `float`/`double`.
+- **Address:** Support Cuenca parishes (El Sagrario, San Sebastián, etc.).
+- **Language:** Spanish primary, English secondary. All user-facing strings must be localizable.
+- **Timezone:** Ecuador uses `America/Guayaquil` (UTC-5, no DST). Always store datetimes in UTC, convert for display.
