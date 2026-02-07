@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\GlowNow.Application\GlowNow.Application.csproj" />
-    <ProjectReference Include="..\GlowNow.Infrastructure\GlowNow.Infrastructure.csproj" />
+    <ProjectReference Include="..\GlowNow.Shared\GlowNow.Shared.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Identity\GlowNow.Identity.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Business\GlowNow.Business.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Catalog\GlowNow.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Team\GlowNow.Team.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Clients\GlowNow.Clients.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Booking\GlowNow.Booking.csproj" />
+    <ProjectReference Include="..\Modules\GlowNow.Notifications\GlowNow.Notifications.csproj" />
   </ItemGroup>
 
 </Project>
