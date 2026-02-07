@@ -64,16 +64,22 @@ graph TB
 ```
 GlowNow/
 ├── apps/
-│   ├── api/                  # .NET 10 API (Clean Architecture)
+│   ├── api/                  # .NET 10 API (Modular Monolith)
 │   │   ├── src/
 │   │   │   ├── GlowNow.Api/             # Host, DI, middleware, endpoints
-│   │   │   ├── GlowNow.Application/     # Use cases, interfaces, CQRS handlers
-│   │   │   ├── GlowNow.Domain/          # Entities, value objects, domain logic
-│   │   │   └── GlowNow.Infrastructure/  # Persistence, external integrations
+│   │   │   ├── GlowNow.Shared/          # Cross-cutting: base classes, value objects, multi-tenancy
+│   │   │   └── Modules/
+│   │   │       ├── GlowNow.Identity/    # Auth, JWT, users, roles
+│   │   │       ├── GlowNow.Business/    # Tenant registration, settings, operating hours
+│   │   │       ├── GlowNow.Catalog/     # Services, categories, pricing
+│   │   │       ├── GlowNow.Team/        # Staff, shifts, blocked time, availability
+│   │   │       ├── GlowNow.Clients/     # Client profiles, search, history
+│   │   │       ├── GlowNow.Booking/     # Availability calculation, appointments
+│   │   │       └── GlowNow.Notifications/ # Email/SMS dispatch via domain events
 │   │   ├── tests/
-│   │   │   ├── GlowNow.UnitTests/           # xUnit unit tests
-│   │   │   ├── GlowNow.IntegrationTests/    # Testcontainers integration tests
-│   │   │   └── GlowNow.EndToEndTests/       # WebApplicationFactory API tests
+│   │   │   ├── Unit/                     # xUnit unit tests per module
+│   │   │   ├── Integration/              # Testcontainers integration tests
+│   │   │   └── Api/                      # WebApplicationFactory API tests
 │   │   ├── Directory.Build.props       # Shared .NET project settings
 │   │   └── GlowNow.Api.sln
 │   ├── mobile/               # Expo / React Native app
@@ -112,11 +118,10 @@ Defined in `turbo.json`:
 
 - **Framework**: .NET 10 minimal API
 - **Stack**: PostgreSQL, EF Core, MediatR (CQRS), FluentValidation, Scalar (OpenAPI)
-- **Architecture**: Clean Architecture with four projects:
+- **Architecture**: Modular monolith with Clean Architecture per module:
   - **Api** — Host, dependency injection, middleware, minimal API endpoint mapping
-  - **Application** — Use cases (Commands/Queries via MediatR), service interfaces, validators
-  - **Domain** — Entities, value objects, aggregate roots, domain events, domain logic
-  - **Infrastructure** — EF Core persistence, external service integrations
+  - **Shared** — Cross-cutting base classes, value objects, multi-tenancy
+  - **Modules/** — Domain-specific modules (Identity, Business, Catalog, Team, Clients, Booking, Notifications), each with its own Domain, Application, and Infrastructure layers
 - **Port**: 5249
 - **Endpoints**: `GET /health` (liveness), `GET /health/ready` (readiness — DB, external services)
 - **Shared props**: `Directory.Build.props` enforces `net10.0`, nullable enabled, implicit usings, warnings-as-errors
@@ -169,11 +174,11 @@ Shared `tsconfig` bases:
 │  │ (Next.js)│   │ (Expo)   │   │  (.NET solution)  │   │
 │  └────┬─────┘   └──────────┘   └───────────────────┘   │
 │       │                         │                       │
-│       ▼                         ▼ (.NET project refs)   │
-│  ┌─────────┐              Api ──► Application           │
-│  │   ui    │              Api ──► Infrastructure         │
-│  └─────────┘              Infrastructure ──► Application │
-│       │                   Application ──► Domain         │
+│       ▼                         ▼ (.NET modular monolith)│
+│  ┌─────────┐              Api ──► Shared                │
+│  │   ui    │              Api ──► Modules/*              │
+│  └─────────┘              Module layers: Domain ◄── App │
+│       │                   Modules depend on Shared only  │
 │  Uses:│                                                 │
 │  eslint-config                                          │
 │  typescript-config                                      │
@@ -186,9 +191,9 @@ Shared `tsconfig` bases:
 - **Zero-warning lint policy** enforced via `--max-warnings 0`
 - **Warnings-as-errors** in .NET via `Directory.Build.props`
 - **CSS Modules** for styling in the web app (no CSS-in-JS)
-- **Clean Architecture** in .NET: dependencies point inward (Api/Infrastructure → Application → Domain)
+- **Modular monolith** in .NET: domain-specific modules with Clean Architecture per module (Domain ← Application ← Infrastructure)
 - **Direct TSX exports** from the UI package (no pre-compilation step)
-- **xUnit** for testing (unit, integration, end-to-end), with NSubstitute for mocking and Testcontainers for database tests
+- **xUnit** for testing (unit, integration, API), with NSubstitute for mocking and Testcontainers for database tests
 
 ## Development commands
 
@@ -205,15 +210,13 @@ Shared `tsconfig` bases:
 
 ---
 
-## Target architecture (planned)
+## Modular monolith architecture
 
-> **Note:** Everything below this line describes the **planned/target** architecture. It has not been implemented yet. The sections above reflect the current state of the codebase.
+### Domain modules
 
-### Modular monolith evolution
+Each module is a self-contained vertical slice owning its entities, use cases, and infrastructure while sharing the same deployment unit.
 
-The current Clean Architecture scaffold (Api / Application / Domain / Infrastructure) will evolve into a **modular monolith** with domain-specific modules. Each module owns its entities, use cases, and infrastructure while sharing the same deployment unit.
-
-**Planned domain modules:**
+**Modules:**
 
 | Module | Responsibility |
 |--------|---------------|
@@ -239,7 +242,7 @@ Shared → nothing (foundation)
 
 Dependencies are **acyclic** — never create circular references between modules. Modules communicate via **direct service interfaces** (synchronous) or **domain events** (asynchronous).
 
-**Planned `src/` structure:**
+**`src/` structure:**
 
 ```
 apps/api/src/
@@ -343,7 +346,7 @@ Registered in this order:
 
 ---
 
-## Data model (planned)
+## Data model
 
 ### Core entities
 
@@ -396,7 +399,7 @@ erDiagram
 
 ---
 
-## API design (planned)
+## API design
 
 ### API versioning
 
@@ -472,7 +475,7 @@ erDiagram
 
 ---
 
-## Key flows (planned)
+## Key flows
 
 ### Online booking flow
 
@@ -564,7 +567,7 @@ infra/
 
 ---
 
-## Security (planned)
+## Security
 
 ### Authentication & authorization
 
@@ -589,7 +592,7 @@ infra/
 
 ---
 
-## Testing strategy (planned)
+## Testing strategy
 
 ### Test projects
 
@@ -597,7 +600,7 @@ infra/
 |---------|-----------|---------|-------------|
 | `tests/GlowNow.UnitTests/` | xUnit + NSubstitute | Isolated logic | Domain entities, value objects, handlers, validators, domain services |
 | `tests/GlowNow.IntegrationTests/` | xUnit + Testcontainers | DB + infra | Repositories, EF Core configs, multi-tenancy filters, query correctness |
-| `tests/GlowNow.EndToEndTests/` | xUnit + WebApplicationFactory | End-to-end | Full HTTP request/response, auth, status codes, response shapes |
+| `tests/GlowNow.ApiTests/` | xUnit + WebApplicationFactory | End-to-end | Full HTTP request/response, auth, status codes, response shapes |
 
 ### Testing conventions
 
@@ -611,7 +614,7 @@ infra/
 
 ---
 
-## Database migrations (planned)
+## Database migrations
 
 - Version-controlled via EF Core migrations.
 - Migrations run automatically on startup in dev, manually in staging/production.
