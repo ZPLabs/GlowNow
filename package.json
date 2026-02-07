@@ -2,8 +2,11 @@
   "name": "glownow",
   "private": true,
   "scripts": {
+    "infra:up": "docker compose -f infra/docker/docker-compose.dev.yml up -d",
+    "infra:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
+
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "npm run infra:up && turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
@@ -22,3 +25,4 @@
     "packages/*"
   ]
 }
+

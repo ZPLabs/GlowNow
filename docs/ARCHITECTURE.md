@@ -67,9 +67,8 @@ GlowNow/
 │   ├── api/                  # .NET 10 API (Clean Architecture)
 │   │   ├── src/
 │   │   │   ├── GlowNow.Api/           # Host, DI, endpoints
-│   │   │   ├── GlowNow.Application/   # Use cases, interfaces
-│   │   │   ├── GlowNow.Domain/        # Entities, value objects
-│   │   │   └── GlowNow.Infrastructure/# External concerns, persistence
+│   │   │   ├── GlowNow.Shared/   # Use cases, interfaces
+│   │   │   └── GlowNow.Modules/        # Entities, value objects
 │   │   ├── Directory.Build.props       # Shared .NET project settings
 │   │   └── GlowNow.Api.sln
 │   ├── mobile/               # Expo / React Native app
