@@ -1,3 +1,4 @@
+using GlowNow.Shared;
 using GlowNow.Identity;
 using GlowNow.Business;
 using GlowNow.Catalog;
@@ -7,6 +8,15 @@ using GlowNow.Booking;
 using GlowNow.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSharedServices(
+    typeof(IdentityModule).Assembly,
+    typeof(BusinessModule).Assembly,
+    typeof(CatalogModule).Assembly,
+    typeof(TeamModule).Assembly,
+    typeof(ClientsModule).Assembly,
+    typeof(BookingModule).Assembly,
+    typeof(NotificationsModule).Assembly);
 
 builder.Services
     .AddIdentityModule()
