@@ -16,8 +16,10 @@ public static class DependencyInjection
         IConfiguration configuration,
         params Assembly[] moduleAssemblies)
     {
-        string connectionString = configuration.GetConnectionString("DefaultConnection") 
+        string connectionString = configuration.GetConnectionString("DefaultConnection")
                                   ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+        services.AddSingleton(moduleAssemblies);
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(connectionString));
