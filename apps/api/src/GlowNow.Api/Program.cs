@@ -9,6 +9,7 @@ using GlowNow.Booking;
 using GlowNow.Notifications;
 using GlowNow.Api.Endpoints;
 using GlowNow.Api.Middleware;
+using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -56,6 +57,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -64,6 +66,12 @@ app.UseAuthorization();
 
 app.UseMiddleware<CurrentUserMiddleware>();
 app.UseMiddleware<TenantMiddleware>();
+
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.EndpointPathPrefix = "/scalar/{documentName}";
+});
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapAuthEndpoints();
