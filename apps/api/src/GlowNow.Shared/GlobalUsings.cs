@@ -10,3 +10,5 @@ global using GlowNow.Shared.Domain.Primitives;
 global using GlowNow.Shared.Application.Messaging;
 global using GlowNow.Shared.Application.Interfaces;
 global using GlowNow.Shared.Application.Behaviors;
+global using Microsoft.EntityFrameworkCore;
+global using GlowNow.Shared.Domain.ValueObjects;
