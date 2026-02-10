@@ -1,9 +1,16 @@
+using GlowNow.Business.Domain.ValueObjects;
+using GlowNow.Shared.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using BusinessEntity = GlowNow.Business.Domain.Entities.Business;
 
 namespace GlowNow.Business.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// EF Core configuration for the Business entity.
+/// </summary>
 internal sealed class BusinessConfiguration : IEntityTypeConfiguration<BusinessEntity>
 {
     public void Configure(EntityTypeBuilder<BusinessEntity> builder)
@@ -45,7 +52,32 @@ internal sealed class BusinessConfiguration : IEntityTypeConfiguration<BusinessE
                 .IsRequired();
         });
 
+        builder.Property(b => b.Description)
+            .HasMaxLength(1000);
+
+        builder.Property(b => b.LogoUrl)
+            .HasMaxLength(500);
+
+        // Store operating hours as JSON using value conversion
+        var operatingHoursConverter = new ValueConverter<OperatingHours, string>(
+            v => v.ToJson(),
+            v => OperatingHours.FromJson(v).Value);
+
+        var operatingHoursComparer = new ValueComparer<OperatingHours>(
+            (a, b) => a != null && b != null && a.ToJson() == b.ToJson(),
+            v => v.ToJson().GetHashCode(),
+            v => OperatingHours.FromJson(v.ToJson()).Value);
+
+        builder.Property(b => b.OperatingHours)
+            .HasColumnName("operating_hours")
+            .HasColumnType("jsonb")
+            .HasConversion(operatingHoursConverter)
+            .Metadata.SetValueComparer(operatingHoursComparer);
+
         builder.Property(b => b.BusinessId)
+            .IsRequired();
+
+        builder.Property(b => b.CreatedAtUtc)
             .IsRequired();
 
         builder.HasQueryFilter(b => true); // Tenant filter will be added later globally or per entity

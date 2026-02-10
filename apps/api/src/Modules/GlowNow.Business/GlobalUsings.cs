@@ -5,3 +5,5 @@ global using GlowNow.Business.Domain.Events;
 global using GlowNow.Shared.Domain.Primitives;
 global using GlowNow.Shared.Domain.Errors;
 global using GlowNow.Shared.Domain.ValueObjects;
+global using FluentValidation;
+global using Microsoft.EntityFrameworkCore;
