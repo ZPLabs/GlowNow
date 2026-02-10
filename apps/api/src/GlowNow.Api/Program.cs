@@ -78,5 +78,6 @@ app.MapAuthEndpoints();
 app.MapBusinessEndpoints();
 app.MapServiceCategoryEndpoints();
 app.MapServiceEndpoints();
+app.MapStaffEndpoints();
 
 app.Run();
