@@ -32,6 +32,7 @@ internal sealed class ServiceCategoryConfiguration : IEntityTypeConfiguration<Se
             .IsRequired();
 
         builder.Property(c => c.IsDeleted)
+            .HasColumnName("is_deleted")
             .IsRequired()
             .HasDefaultValue(false);
 

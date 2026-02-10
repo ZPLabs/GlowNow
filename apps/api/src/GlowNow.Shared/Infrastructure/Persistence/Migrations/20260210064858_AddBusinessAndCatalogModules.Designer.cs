@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GlowNow.Shared.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260210015739_AddBusinessAndCatalogModules")]
+    [Migration("20260210064858_AddBusinessAndCatalogModules")]
     partial class AddBusinessAndCatalogModules
     {
         /// <inheritdoc />
@@ -145,7 +145,8 @@ namespace GlowNow.Shared.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
 
                     b.Property<string>("Name")
                         .IsRequired()
