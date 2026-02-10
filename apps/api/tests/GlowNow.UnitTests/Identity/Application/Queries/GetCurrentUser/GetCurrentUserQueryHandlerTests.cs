@@ -1,3 +1,4 @@
+using GlowNow.Business.Application.Interfaces;
 using GlowNow.Identity.Application.Interfaces;
 using GlowNow.Identity.Application.Queries.GetCurrentUser;
 

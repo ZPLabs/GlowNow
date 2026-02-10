@@ -26,7 +26,7 @@ public static class IdentityModule
         services.AddScoped<ICognitoIdentityProvider, CognitoIdentityProvider>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IBusinessMembershipRepository, BusinessMembershipRepository>();
-        services.AddScoped<IBusinessRepository, BusinessRepository>();
+        // IBusinessRepository is registered by BusinessModule
 
         return services;
     }

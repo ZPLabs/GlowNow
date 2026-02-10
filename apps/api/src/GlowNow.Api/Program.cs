@@ -75,5 +75,8 @@ app.MapScalarApiReference(options =>
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapAuthEndpoints();
+app.MapBusinessEndpoints();
+app.MapServiceCategoryEndpoints();
+app.MapServiceEndpoints();
 
 app.Run();
