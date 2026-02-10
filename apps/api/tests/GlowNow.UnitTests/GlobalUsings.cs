@@ -11,3 +11,8 @@ global using GlowNow.Identity.Domain.Errors;
 global using GlowNow.Identity.Domain.Events;
 global using GlowNow.Business.Domain.Entities;
 global using GlowNow.Business.Domain.ValueObjects;
+global using GlowNow.Business.Domain.Errors;
+global using GlowNow.Catalog.Domain.Entities;
+global using GlowNow.Catalog.Domain.ValueObjects;
+global using GlowNow.Catalog.Domain.Errors;
+global using GlowNow.Catalog.Domain.Events;
