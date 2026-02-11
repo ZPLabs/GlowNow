@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlowNow.Notifications.Application\GlowNow.Notifications.Application.csproj" />
+    <ProjectReference Include="..\GlowNow.Notifications.Infrastructure\GlowNow.Notifications.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

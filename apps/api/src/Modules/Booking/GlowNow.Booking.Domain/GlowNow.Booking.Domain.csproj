@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Core\GlowNow.SharedKernel\GlowNow.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

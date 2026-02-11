@@ -1,4 +1,4 @@
-using GlowNow.Shared.Application.Interfaces;
+using GlowNow.Infrastructure.Core.Application.Interfaces;
 using GlowNow.Team.Application.Commands.CreateStaffProfile;
 using GlowNow.Team.Application.Interfaces;
 using GlowNow.Team.Domain.Entities;

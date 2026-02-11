@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-preview.3.25172.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-preview.3.25172.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0-preview.3.25171.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Scalar.AspNetCore" Version="1.2.76" />
+  </ItemGroup>
+
+  <!-- Core projects -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\GlowNow.SharedKernel\GlowNow.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Module API projects -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Identity\GlowNow.Identity.Api\GlowNow.Identity.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Business\GlowNow.Business.Api\GlowNow.Business.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Catalog\GlowNow.Catalog.Api\GlowNow.Catalog.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Team\GlowNow.Team.Api\GlowNow.Team.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Clients\GlowNow.Clients.Api\GlowNow.Clients.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Booking\GlowNow.Booking.Api\GlowNow.Booking.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Notifications\GlowNow.Notifications.Api\GlowNow.Notifications.Api.csproj" />
+  </ItemGroup>
+
+</Project>
