@@ -31,6 +31,13 @@ public static class DependencyInjection
         {
             var settings = configuration.GetSection(CognitoSettings.SectionName).Get<CognitoSettings>();
             var region = Amazon.RegionEndpoint.GetBySystemName(settings?.Region ?? "us-east-1");
+
+            if (!string.IsNullOrEmpty(settings?.AccessKey) && !string.IsNullOrEmpty(settings?.SecretKey))
+            {
+                var credentials = new Amazon.Runtime.BasicAWSCredentials(settings.AccessKey, settings.SecretKey);
+                return new AmazonCognitoIdentityProviderClient(credentials, region);
+            }
+
             return new AmazonCognitoIdentityProviderClient(region);
         });
 

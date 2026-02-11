@@ -3,6 +3,7 @@ using Amazon.CognitoIdentityProvider.Model;
 using GlowNow.Identity.Application.Interfaces;
 using GlowNow.Identity.Domain.Errors;
 using GlowNow.SharedKernel.Domain.Errors;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace GlowNow.Identity.Infrastructure.Services;
@@ -11,13 +12,16 @@ internal sealed class CognitoIdentityProvider : ICognitoIdentityProvider
 {
     private readonly IAmazonCognitoIdentityProvider _cognitoClient;
     private readonly CognitoSettings _settings;
+    private readonly ILogger<CognitoIdentityProvider> _logger;
 
     public CognitoIdentityProvider(
         IAmazonCognitoIdentityProvider cognitoClient,
-        IOptions<CognitoSettings> settings)
+        IOptions<CognitoSettings> settings,
+        ILogger<CognitoIdentityProvider> logger)
     {
         _cognitoClient = cognitoClient;
         _settings = settings.Value;
+        _logger = logger;
     }
 
     public async Task<Result<string>> RegisterUserAsync(
@@ -57,9 +61,14 @@ internal sealed class CognitoIdentityProvider : ICognitoIdentityProvider
         {
             return Result.Failure<string>(IdentityErrors.EmailAlreadyInUse);
         }
-        catch (Exception)
+        catch (AmazonCognitoIdentityProviderException ex)
         {
-            // Log ex
+            _logger.LogError(ex, "Cognito error during registration for {Email}: {Message}", email, ex.Message);
+            return Result.Failure<string>(IdentityErrors.CognitoCustomError(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during Cognito registration for {Email}", email);
             return Result.Failure<string>(IdentityErrors.CognitoError);
         }
     }
@@ -96,9 +105,14 @@ internal sealed class CognitoIdentityProvider : ICognitoIdentityProvider
         {
             return Result.Failure<AuthTokens>(IdentityErrors.InvalidCredentials);
         }
-        catch (Exception)
+        catch (AmazonCognitoIdentityProviderException ex)
         {
-            // Log ex
+            _logger.LogError(ex, "Cognito error during login for {Email}: {Message}", email, ex.Message);
+            return Result.Failure<AuthTokens>(IdentityErrors.CognitoCustomError(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during Cognito login for {Email}", email);
             return Result.Failure<AuthTokens>(IdentityErrors.CognitoError);
         }
     }
@@ -130,9 +144,14 @@ internal sealed class CognitoIdentityProvider : ICognitoIdentityProvider
         {
             return Result.Failure<AuthTokens>(IdentityErrors.InvalidRefreshToken);
         }
-        catch (Exception)
+        catch (AmazonCognitoIdentityProviderException ex)
         {
-            // Log ex
+            _logger.LogError(ex, "Cognito error during token refresh: {Message}", ex.Message);
+            return Result.Failure<AuthTokens>(IdentityErrors.CognitoCustomError(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during Cognito token refresh");
             return Result.Failure<AuthTokens>(IdentityErrors.CognitoError);
         }
     }
@@ -151,9 +170,14 @@ internal sealed class CognitoIdentityProvider : ICognitoIdentityProvider
 
             return Result.Success();
         }
-        catch (Exception)
+        catch (AmazonCognitoIdentityProviderException ex)
         {
-            // Log ex
+            _logger.LogError(ex, "Cognito error during global sign out for {UserId}: {Message}", cognitoUserId, ex.Message);
+            return Result.Failure(IdentityErrors.CognitoCustomError(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during Cognito global sign out for {UserId}", cognitoUserId);
             return Result.Failure(IdentityErrors.CognitoError);
         }
     }
@@ -170,9 +194,9 @@ internal sealed class CognitoIdentityProvider : ICognitoIdentityProvider
 
             await _cognitoClient.AdminDeleteUserAsync(request);
         }
-        catch
+        catch (Exception ex)
         {
-            // Best effort
+            _logger.LogWarning(ex, "Failed to delete Cognito user {UserId} during compensation", cognitoUserId);
         }
     }
 }

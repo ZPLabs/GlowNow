@@ -20,6 +20,10 @@ public static class IdentityErrors
         "Identity.CognitoError",
         "An error occurred with the identity provider.");
 
+    public static Error CognitoCustomError(string message) => Error.Problem(
+        "Identity.CognitoError",
+        message);
+
     public static readonly Error InvalidRefreshToken = Error.Problem(
         "Identity.InvalidRefreshToken",
         "The provided refresh token is invalid or expired.");
