@@ -1,0 +1,26 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans);
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: rgba(128, 128, 128, 0.8);
+  margin: 0;
+  font-family: var(--font-geist-sans);
+}
+
+.error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin: 0;
+  font-family: var(--font-geist-sans);
+}

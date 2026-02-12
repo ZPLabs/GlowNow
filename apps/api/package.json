@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "dotnet build GlowNow.Api.sln --configuration Release",
-    "dev": "dotnet run --project src/GlowNow.Api",
+    "dev": "dotnet run --project src/Api/GlowNow.Api",
     "lint": "dotnet format GlowNow.Api.sln --verify-no-changes",
     "check-types": "echo 'Type checking is part of dotnet build for C#'"
   }

@@ -17,16 +17,24 @@ GlowNow is a multi-tenant SaaS booking platform for Ecuador's beauty/wellness in
 ```
 apps/api/
 ├── src/
-│   ├── GlowNow.Api/                  # Host — DI, middleware, minimal API endpoints
-│   ├── GlowNow.Shared/               # Cross-cutting — base classes, value objects, multi-tenancy
+│   ├── Api/
+│   │   └── GlowNow.Api/              # Composition root — DI, middleware, MVC host
+│   ├── Core/
+│   │   ├── GlowNow.SharedKernel/     # Domain primitives — Entity, AggregateRoot, ValueObject, Result
+│   │   └── GlowNow.Infrastructure.Core/  # Cross-cutting — behaviors, interfaces, providers
 │   └── Modules/
-│       ├── GlowNow.Identity/          # Auth, JWT, users, roles
-│       ├── GlowNow.Business/          # Tenant registration, settings, operating hours
-│       ├── GlowNow.Catalog/           # Services, categories, pricing
-│       ├── GlowNow.Team/              # Staff, shifts, blocked time, availability
-│       ├── GlowNow.Clients/           # Client profiles, search, history
-│       ├── GlowNow.Booking/           # Availability calculation, appointments
-│       └── GlowNow.Notifications/     # Email/SMS dispatch via domain events
+│       ├── Identity/                  # Auth, JWT, users, roles
+│       │   ├── GlowNow.Identity.Domain/
+│       │   ├── GlowNow.Identity.Application/
+│       │   ├── GlowNow.Identity.Infrastructure/
+│       │   └── GlowNow.Identity.Api/
+│       ├── Business/                  # Tenant registration, settings, operating hours
+│       │   └── ... (same 4-project layout)
+│       ├── Catalog/                   # Services, categories, pricing
+│       ├── Team/                      # Staff, shifts, blocked time, availability
+│       ├── Clients/                   # Client profiles, search, history
+│       ├── Booking/                   # Availability calculation, appointments
+│       └── Notifications/             # Email/SMS dispatch via domain events
 ├── tests/
 │   ├── GlowNow.UnitTests/            # xUnit unit tests per module
 │   ├── GlowNow.IntegrationTests/     # Testcontainers-based integration tests
@@ -34,6 +42,19 @@ apps/api/
 ├── Directory.Build.props              # Shared .NET settings (net10.0, nullable, warnings-as-errors)
 └── GlowNow.Api.sln
 ```
+
+### 4-Project-Per-Module Architecture
+
+Each module follows Clean Architecture with 4 separate projects:
+
+| Project | Layer | Purpose |
+|---------|-------|---------|
+| `GlowNow.{Module}.Domain` | Domain | Entities, value objects, events, errors |
+| `GlowNow.{Module}.Application` | Application | Commands, queries, handlers, validators, interfaces |
+| `GlowNow.{Module}.Infrastructure` | Infrastructure | EF Core, repositories, external services |
+| `GlowNow.{Module}.Api` | Presentation | MVC controllers, module DI registration |
+
+**Dependency flow:** Api → Infrastructure → Application → Domain (and SharedKernel)
 
 ---
 
@@ -87,28 +108,34 @@ Shared → nothing (foundation)
 
 ### File Organization (per module)
 
+Each module has 4 separate projects:
+
 ```
-GlowNow.{Module}/
-├── Domain/
+Modules/{Module}/
+├── GlowNow.{Module}.Domain/
 │   ├── Entities/              # Aggregate roots and entities
 │   ├── ValueObjects/          # Module-specific value objects
 │   ├── Events/                # Domain events
 │   ├── Enums/                 # Domain enumerations
 │   ├── Errors/                # Domain error definitions
 │   └── Services/              # Domain services (pure logic)
-├── Application/
+├── GlowNow.{Module}.Application/
 │   ├── Commands/              # One folder per command (Command + Handler + Validator)
 │   ├── Queries/               # One folder per query (Query + Handler + Response)
 │   ├── Interfaces/            # Port interfaces (repositories, external services)
 │   ├── Mappings/              # Entity ↔ Response mappings
 │   └── EventHandlers/         # Handlers for domain events from other modules
-├── Infrastructure/
+├── GlowNow.{Module}.Infrastructure/
 │   ├── Persistence/
 │   │   ├── Configurations/    # EF Core entity configurations (Fluent API)
 │   │   ├── Repositories/      # Repository implementations
-│   │   └── Migrations/        # EF Core migrations (if module-specific)
-│   └── Services/              # External service implementations
-└── {Module}Module.cs          # DI registration entry point
+│   │   └── Migrations/        # EF Core migrations (module-specific DbContext)
+│   ├── Services/              # External service implementations
+│   └── DependencyInjection.cs # Infrastructure DI registration
+└── GlowNow.{Module}.Api/
+    ├── Controllers/           # MVC controllers for this module
+    ├── Infrastructure/        # API helpers (ResultExtensions, ApiResponse)
+    └── {Module}Module.cs      # Module DI registration entry point
 ```
 
 ### Command/Query Rules
@@ -145,10 +172,10 @@ GlowNow.{Module}/
 
 ## API Conventions
 
-- Endpoints grouped by module in `GlowNow.Api/Endpoints/`.
+- **MVC Controllers** — Each module has its own controllers in `GlowNow.{Module}.Api/Controllers/`.
 - All endpoints prefixed with `/api/v1/`. URL-based versioning.
 - Never remove v1 endpoints without a deprecation period.
-- All endpoints documented via Scalar (`.WithDescription()`, `.Produces<T>()`, `.ProducesProblem()`).
+- All endpoints documented via Scalar with XML doc comments and `[ProducesResponseType]` attributes.
 
 ### Response Format
 
@@ -254,9 +281,9 @@ Register in this order:
 
 ## Quick Reference: New Feature Checklist
 
-1. **Domain first:** Define/update entities, value objects, events, domain errors.
-2. **Application layer:** Create Command/Query + Handler + Validator + Response DTO.
-3. **Infrastructure:** Implement repository, EF Core configuration, migration if needed.
-4. **API endpoint:** Map minimal API endpoint in `GlowNow.Api/Endpoints/`.
+1. **Domain first:** Define/update entities, value objects, events, domain errors in `GlowNow.{Module}.Domain/`.
+2. **Application layer:** Create Command/Query + Handler + Validator + Response DTO in `GlowNow.{Module}.Application/`.
+3. **Infrastructure:** Implement repository, EF Core configuration, migration in `GlowNow.{Module}.Infrastructure/`.
+4. **API controller:** Add MVC controller action in `GlowNow.{Module}.Api/Controllers/`.
 5. **Tests:** Unit tests for domain + handler, integration for repository, API tests for endpoint.
-6. **OpenAPI:** Ensure endpoint is documented in Scalar.
+6. **OpenAPI:** Ensure endpoint is documented in Scalar with proper attributes.

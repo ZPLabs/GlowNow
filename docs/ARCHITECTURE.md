@@ -66,21 +66,28 @@ GlowNow/
 ├── apps/
 │   ├── api/                  # .NET 10 API (Modular Monolith)
 │   │   ├── src/
-│   │   │   ├── GlowNow.Api/             # Host, DI, middleware, endpoints
-│   │   │   ├── GlowNow.Shared/          # Cross-cutting: base classes, value objects, multi-tenancy
+│   │   │   ├── Api/
+│   │   │   │   └── GlowNow.Api/         # Composition root, DI, middleware
+│   │   │   ├── Core/
+│   │   │   │   ├── GlowNow.SharedKernel/        # Domain primitives
+│   │   │   │   └── GlowNow.Infrastructure.Core/ # Cross-cutting behaviors
 │   │   │   └── Modules/
-│   │   │       ├── GlowNow.Identity/    # Auth, JWT, users, roles
-│   │   │       ├── GlowNow.Business/    # Tenant registration, settings, operating hours
-│   │   │       ├── GlowNow.Catalog/     # Services, categories, pricing
-│   │   │       ├── GlowNow.Team/        # Staff, shifts, blocked time, availability
-│   │   │       ├── GlowNow.Clients/     # Client profiles, search, history
-│   │   │       ├── GlowNow.Booking/     # Availability calculation, appointments
-│   │   │       └── GlowNow.Notifications/ # Email/SMS dispatch via domain events
+│   │   │       ├── Identity/            # Auth, JWT, users, roles
+│   │   │       │   ├── GlowNow.Identity.Domain/
+│   │   │       │   ├── GlowNow.Identity.Application/
+│   │   │       │   ├── GlowNow.Identity.Infrastructure/
+│   │   │       │   └── GlowNow.Identity.Api/
+│   │   │       ├── Business/            # Tenant registration, settings
+│   │   │       ├── Catalog/             # Services, categories, pricing
+│   │   │       ├── Team/                # Staff, shifts, availability
+│   │   │       ├── Clients/             # Client profiles, history
+│   │   │       ├── Booking/             # Appointments, scheduling
+│   │   │       └── Notifications/       # Email/SMS dispatch
 │   │   ├── tests/
-│   │   │   ├── Unit/                     # xUnit unit tests per module
-│   │   │   ├── Integration/              # Testcontainers integration tests
-│   │   │   └── Api/                      # WebApplicationFactory API tests
-│   │   ├── Directory.Build.props       # Shared .NET project settings
+│   │   │   ├── GlowNow.UnitTests/       # xUnit unit tests per module
+│   │   │   ├── GlowNow.IntegrationTests/# Testcontainers integration tests
+│   │   │   └── GlowNow.ApiTests/        # WebApplicationFactory API tests
+│   │   ├── Directory.Build.props        # Shared .NET project settings
 │   │   └── GlowNow.Api.sln
 │   ├── mobile/               # Expo / React Native app
 │   └── web/                  # Next.js 16 web app
@@ -90,6 +97,7 @@ GlowNow/
 │   └── ui/                   # Shared React component library
 ├── docs/
 │   ├── ARCHITECTURE.md       # This file
+│   ├── ai/current-state.md   # Development status tracker
 │   └── PRD.md                # Product requirements
 ├── turbo.json                # Turborepo pipeline config
 └── package.json              # Root workspaces & scripts
@@ -116,12 +124,16 @@ Defined in `turbo.json`:
 
 ### `@glownow/api` — API
 
-- **Framework**: .NET 10 minimal API
+- **Framework**: .NET 10 with MVC Controllers
 - **Stack**: PostgreSQL, EF Core, MediatR (CQRS), FluentValidation, Scalar (OpenAPI)
-- **Architecture**: Modular monolith with Clean Architecture per module:
-  - **Api** — Host, dependency injection, middleware, minimal API endpoint mapping
-  - **Shared** — Cross-cutting base classes, value objects, multi-tenancy
-  - **Modules/** — Domain-specific modules (Identity, Business, Catalog, Team, Clients, Booking, Notifications), each with its own Domain, Application, and Infrastructure layers
+- **Architecture**: Modular monolith with 4-project-per-module Clean Architecture:
+  - **Core/GlowNow.SharedKernel** — Domain primitives (Entity, AggregateRoot, ValueObject, Result, Error)
+  - **Core/GlowNow.Infrastructure.Core** — Cross-cutting behaviors, interfaces, providers
+  - **Modules/{Module}/** — Each module has 4 projects:
+    - `GlowNow.{Module}.Domain` — Entities, value objects, events, errors
+    - `GlowNow.{Module}.Application` — Commands, queries, handlers, validators
+    - `GlowNow.{Module}.Infrastructure` — EF Core, repositories, external services
+    - `GlowNow.{Module}.Api` — MVC controllers, module DI registration
 - **Port**: 5249
 - **Endpoints**: `GET /health` (liveness), `GET /health/ready` (readiness — DB, external services)
 - **Shared props**: `Directory.Build.props` enforces `net10.0`, nullable enabled, implicit usings, warnings-as-errors
@@ -174,14 +186,17 @@ Shared `tsconfig` bases:
 │  │ (Next.js)│   │ (Expo)   │   │  (.NET solution)  │   │
 │  └────┬─────┘   └──────────┘   └───────────────────┘   │
 │       │                         │                       │
-│       ▼                         ▼ (.NET modular monolith)│
-│  ┌─────────┐              Api ──► Shared                │
-│  │   ui    │              Api ──► Modules/*              │
-│  └─────────┘              Module layers: Domain ◄── App │
-│       │                   Modules depend on Shared only  │
-│  Uses:│                                                 │
-│  eslint-config                                          │
-│  typescript-config                                      │
+│       ▼                         ▼ (4-project-per-module)│
+│  ┌─────────┐              GlowNow.Api (host)            │
+│  │   ui    │                  │                         │
+│  └─────────┘              ┌───┴───┐                     │
+│       │                   ▼       ▼                     │
+│  Uses:│              Core     Modules/{Module}/         │
+│  eslint-config       │         ├── Domain               │
+│  typescript-config   │         ├── Application          │
+│                      │         ├── Infrastructure       │
+│               SharedKernel     └── Api                  │
+│               Infrastructure.Core                       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -242,46 +257,57 @@ Shared → nothing (foundation)
 
 Dependencies are **acyclic** — never create circular references between modules. Modules communicate via **direct service interfaces** (synchronous) or **domain events** (asynchronous).
 
-**`src/` structure:**
+**`src/` structure (4-project-per-module):**
 
 ```
 apps/api/src/
-├── GlowNow.Api/                  # Host, DI, middleware, endpoint mapping
-├── GlowNow.Shared/               # Cross-cutting: base classes, value objects, multi-tenancy
+├── Api/
+│   └── GlowNow.Api/              # Composition root, DI, middleware
+├── Core/
+│   ├── GlowNow.SharedKernel/     # Domain primitives (Entity, Result, ValueObject)
+│   └── GlowNow.Infrastructure.Core/  # Cross-cutting (behaviors, interfaces)
 └── Modules/
-    ├── GlowNow.Identity/         # Auth, JWT, users, roles
-    ├── GlowNow.Business/         # Tenant registration, settings, operating hours
-    ├── GlowNow.Catalog/          # Services, categories, pricing
-    ├── GlowNow.Team/             # Staff, shifts, blocked time, availability
-    ├── GlowNow.Clients/          # Client profiles, search, history
-    ├── GlowNow.Booking/          # Availability calculation, appointments
-    └── GlowNow.Notifications/    # Email/SMS dispatch via domain events
+    ├── Identity/
+    │   ├── GlowNow.Identity.Domain/
+    │   ├── GlowNow.Identity.Application/
+    │   ├── GlowNow.Identity.Infrastructure/
+    │   └── GlowNow.Identity.Api/
+    ├── Business/                 # (same 4-project layout)
+    ├── Catalog/
+    ├── Team/
+    ├── Clients/
+    ├── Booking/
+    └── Notifications/
 ```
 
-**Per-module file organization:**
+**Per-module project organization:**
 
 ```
-GlowNow.{Module}/
-├── Domain/
+Modules/{Module}/
+├── GlowNow.{Module}.Domain/
 │   ├── Entities/              # Aggregate roots and entities
 │   ├── ValueObjects/          # Module-specific value objects
 │   ├── Events/                # Domain events
 │   ├── Enums/                 # Domain enumerations
 │   ├── Errors/                # Domain error definitions
 │   └── Services/              # Domain services (pure logic)
-├── Application/
+├── GlowNow.{Module}.Application/
 │   ├── Commands/              # One folder per command (Command + Handler + Validator)
 │   ├── Queries/               # One folder per query (Query + Handler + Response)
 │   ├── Interfaces/            # Port interfaces (repositories, external services)
 │   ├── Mappings/              # Entity ↔ Response mappings
 │   └── EventHandlers/         # Handlers for domain events from other modules
-├── Infrastructure/
+├── GlowNow.{Module}.Infrastructure/
 │   ├── Persistence/
 │   │   ├── Configurations/    # EF Core entity configurations (Fluent API)
 │   │   ├── Repositories/      # Repository implementations
-│   │   └── Migrations/        # EF Core migrations (if module-specific)
-│   └── Services/              # External service implementations
-└── {Module}Module.cs          # DI registration entry point
+│   │   └── Migrations/        # EF Core migrations (module-specific DbContext)
+│   ├── Services/              # External service implementations
+│   └── DependencyInjection.cs # Infrastructure DI registration
+└── GlowNow.{Module}.Api/
+    ├── Controllers/           # MVC controllers
+    ├── Infrastructure/        # API helpers (ResultExtensions, ApiResponse)
+    └── {Module}Module.cs      # Module DI registration entry point
 ```
 
 ### Multi-tenancy strategy
