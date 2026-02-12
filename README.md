@@ -13,14 +13,21 @@ This project is organized as a [Turborepo](https://turborepo.dev) monorepo:
 ```
 apps/
   web/        Next.js 16 — client-facing booking and business dashboard
-  api/        .NET 10 — REST API (clean architecture)
+  api/        .NET 10 — REST API (modular monolith, 4-project-per-module)
+    src/
+      Api/GlowNow.Api/              # Composition root
+      Core/GlowNow.SharedKernel/    # Domain primitives
+      Core/GlowNow.Infrastructure.Core/  # Cross-cutting
+      Modules/{Module}/             # Domain, Application, Infrastructure, Api
   mobile/     Expo — planned mobile app
 packages/
-  ui/         Shared React component library (@repo/ui)
+  ui/         Shared React component library (@glownow/ui)
   eslint-config/    Shared ESLint configs
   typescript-config/ Shared TypeScript configs
 docs/
   PRD.md      Product Requirements Document
+  ARCHITECTURE.md   System architecture
+  ai/current-state.md   Development status
 ```
 
 ## Prerequisites
