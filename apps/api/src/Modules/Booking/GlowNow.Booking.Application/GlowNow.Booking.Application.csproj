@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlowNow.Booking.Domain\GlowNow.Booking.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+    <!-- Cross-module dependencies: Booking uses Team, Catalog, and Clients -->
+    <ProjectReference Include="..\..\Team\GlowNow.Team.Application\GlowNow.Team.Application.csproj" />
+    <ProjectReference Include="..\..\Catalog\GlowNow.Catalog.Application\GlowNow.Catalog.Application.csproj" />
+    <ProjectReference Include="..\..\Clients\GlowNow.Clients.Application\GlowNow.Clients.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+  </ItemGroup>
+
+</Project>

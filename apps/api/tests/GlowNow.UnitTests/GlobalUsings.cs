@@ -1,10 +1,10 @@
 global using Xunit;
 global using FluentAssertions;
 global using NSubstitute;
-global using GlowNow.Shared.Domain.Primitives;
-global using GlowNow.Shared.Domain.Errors;
-global using GlowNow.Shared.Domain.Events;
-global using GlowNow.Shared.Domain.ValueObjects;
+global using GlowNow.SharedKernel.Domain.Primitives;
+global using GlowNow.SharedKernel.Domain.Errors;
+global using GlowNow.SharedKernel.Domain.Events;
+global using GlowNow.SharedKernel.Domain.ValueObjects;
 global using GlowNow.Identity.Domain.Entities;
 global using GlowNow.Identity.Domain.Enums;
 global using GlowNow.Identity.Domain.Errors;

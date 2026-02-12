@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlowNow.Catalog.Domain\GlowNow.Catalog.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+  </ItemGroup>
+
+</Project>

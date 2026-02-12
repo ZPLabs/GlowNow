@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlowNow.Clients.Domain\GlowNow.Clients.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+    <!-- Cross-module dependency: Clients may reference Identity for user lookups -->
+    <ProjectReference Include="..\..\Identity\GlowNow.Identity.Application\GlowNow.Identity.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+  </ItemGroup>
+
+</Project>

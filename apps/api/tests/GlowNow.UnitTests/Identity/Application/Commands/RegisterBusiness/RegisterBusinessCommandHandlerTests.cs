@@ -1,7 +1,7 @@
 using GlowNow.Business.Application.Interfaces;
 using GlowNow.Identity.Application.Commands.RegisterBusiness;
 using GlowNow.Identity.Application.Interfaces;
-using GlowNow.Shared.Application.Interfaces;
+using GlowNow.Infrastructure.Core.Application.Interfaces;
 
 namespace GlowNow.UnitTests.Identity.Application.Commands.RegisterBusiness;
 

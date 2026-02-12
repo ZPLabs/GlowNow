@@ -1,0 +1,14 @@
+global using MediatR;
+global using Microsoft.Extensions.Logging;
+global using FluentValidation;
+global using System.Reflection;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.DependencyInjection.Extensions;
+global using Microsoft.EntityFrameworkCore;
+global using GlowNow.SharedKernel.Domain.Errors;
+global using GlowNow.SharedKernel.Domain.Events;
+global using GlowNow.SharedKernel.Domain.Primitives;
+global using GlowNow.SharedKernel.Domain.ValueObjects;
+global using GlowNow.Infrastructure.Core.Application.Messaging;
+global using GlowNow.Infrastructure.Core.Application.Interfaces;
+global using GlowNow.Infrastructure.Core.Application.Behaviors;

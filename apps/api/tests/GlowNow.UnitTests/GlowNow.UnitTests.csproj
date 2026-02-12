@@ -13,15 +13,29 @@
     <PackageReference Include="FluentAssertions" Version="8.2.0" />
   </ItemGroup>
 
+  <!-- Core projects -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\GlowNow.Shared\GlowNow.Shared.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Identity\GlowNow.Identity.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Business\GlowNow.Business.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Catalog\GlowNow.Catalog.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Team\GlowNow.Team.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Clients\GlowNow.Clients.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Booking\GlowNow.Booking.csproj" />
-    <ProjectReference Include="..\..\src\Modules\GlowNow.Notifications\GlowNow.Notifications.csproj" />
+    <ProjectReference Include="..\..\src\Core\GlowNow.SharedKernel\GlowNow.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Module projects (Domain, Application, Infrastructure) -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modules\Identity\GlowNow.Identity.Domain\GlowNow.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Identity\GlowNow.Identity.Application\GlowNow.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Identity\GlowNow.Identity.Infrastructure\GlowNow.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Business\GlowNow.Business.Domain\GlowNow.Business.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Business\GlowNow.Business.Application\GlowNow.Business.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalog\GlowNow.Catalog.Domain\GlowNow.Catalog.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalog\GlowNow.Catalog.Application\GlowNow.Catalog.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Team\GlowNow.Team.Domain\GlowNow.Team.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Team\GlowNow.Team.Application\GlowNow.Team.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Clients\GlowNow.Clients.Domain\GlowNow.Clients.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Clients\GlowNow.Clients.Application\GlowNow.Clients.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Booking\GlowNow.Booking.Domain\GlowNow.Booking.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Booking\GlowNow.Booking.Application\GlowNow.Booking.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Notifications\GlowNow.Notifications.Domain\GlowNow.Notifications.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Notifications\GlowNow.Notifications.Application\GlowNow.Notifications.Application.csproj" />
   </ItemGroup>
 
 </Project>

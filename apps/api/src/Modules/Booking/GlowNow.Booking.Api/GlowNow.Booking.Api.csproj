@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlowNow.Booking.Application\GlowNow.Booking.Application.csproj" />
+    <ProjectReference Include="..\GlowNow.Booking.Infrastructure\GlowNow.Booking.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Core\GlowNow.Infrastructure.Core\GlowNow.Infrastructure.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-preview.3.25172.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

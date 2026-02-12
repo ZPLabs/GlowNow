@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\GlowNow.Api\GlowNow.Api.csproj" />
+    <ProjectReference Include="..\..\src\Api\GlowNow.Api\GlowNow.Api.csproj" />
   </ItemGroup>
 
 </Project>

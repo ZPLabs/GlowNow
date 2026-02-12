@@ -1,9 +1,0 @@
-global using GlowNow.Identity.Domain.Entities;
-global using GlowNow.Identity.Domain.Enums;
-global using GlowNow.Identity.Domain.Errors;
-global using GlowNow.Identity.Domain.Events;
-global using GlowNow.Shared.Domain.Primitives;
-global using GlowNow.Shared.Domain.Errors;
-global using GlowNow.Shared.Domain.ValueObjects;
-global using FluentValidation;
-global using Microsoft.EntityFrameworkCore;
