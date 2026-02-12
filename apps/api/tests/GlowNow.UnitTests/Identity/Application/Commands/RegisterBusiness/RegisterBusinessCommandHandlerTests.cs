@@ -11,7 +11,8 @@ public class RegisterBusinessCommandHandlerTests
     private readonly IUserRepository _userRepository;
     private readonly IBusinessRepository _businessRepository;
     private readonly IBusinessMembershipRepository _membershipRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IIdentityUnitOfWork _identityUnitOfWork;
+    private readonly IBusinessUnitOfWork _businessUnitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly RegisterBusinessCommandHandler _handler;
 
@@ -21,15 +22,17 @@ public class RegisterBusinessCommandHandlerTests
         _userRepository = Substitute.For<IUserRepository>();
         _businessRepository = Substitute.For<IBusinessRepository>();
         _membershipRepository = Substitute.For<IBusinessMembershipRepository>();
-        _unitOfWork = Substitute.For<IUnitOfWork>();
+        _identityUnitOfWork = Substitute.For<IIdentityUnitOfWork>();
+        _businessUnitOfWork = Substitute.For<IBusinessUnitOfWork>();
         _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        
+
         _handler = new RegisterBusinessCommandHandler(
             _cognitoService,
             _userRepository,
             _businessRepository,
             _membershipRepository,
-            _unitOfWork,
+            _identityUnitOfWork,
+            _businessUnitOfWork,
             _dateTimeProvider);
     }
 
@@ -52,7 +55,7 @@ public class RegisterBusinessCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _identityUnitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -127,7 +130,7 @@ public class RegisterBusinessCommandHandlerTests
         _cognitoService.RegisterUserAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IDictionary<string, string>>())
             .Returns(Result.Success("cognito-id"));
         _dateTimeProvider.UtcNow.Returns(DateTime.UtcNow);
-        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+        _identityUnitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
             .Returns<int>(_ => throw new Exception("DB failure"));
 
         // Act

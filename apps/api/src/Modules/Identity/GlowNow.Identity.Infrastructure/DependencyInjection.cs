@@ -3,7 +3,6 @@ using GlowNow.Identity.Application.Interfaces;
 using GlowNow.Identity.Infrastructure.Persistence;
 using GlowNow.Identity.Infrastructure.Persistence.Repositories;
 using GlowNow.Identity.Infrastructure.Services;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +21,7 @@ public static class DependencyInjection
         services.AddDbContext<IdentityDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
+        services.AddScoped<IIdentityUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
 
         // Configure Cognito
         services.Configure<CognitoSettings>(configuration.GetSection(CognitoSettings.SectionName));

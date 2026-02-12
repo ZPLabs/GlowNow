@@ -1,7 +1,6 @@
 using GlowNow.Business.Application.Interfaces;
 using GlowNow.Business.Domain.Errors;
 using GlowNow.Business.Domain.ValueObjects;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using GlowNow.Infrastructure.Core.Application.Messaging;
 using GlowNow.SharedKernel.Domain.Errors;
 
@@ -13,11 +12,11 @@ namespace GlowNow.Business.Application.Commands.SetOperatingHours;
 internal sealed class SetOperatingHoursCommandHandler : ICommandHandler<SetOperatingHoursCommand>
 {
     private readonly IBusinessRepository _businessRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IBusinessUnitOfWork _unitOfWork;
 
     public SetOperatingHoursCommandHandler(
         IBusinessRepository businessRepository,
-        IUnitOfWork unitOfWork)
+        IBusinessUnitOfWork unitOfWork)
     {
         _businessRepository = businessRepository;
         _unitOfWork = unitOfWork;

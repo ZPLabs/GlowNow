@@ -1,10 +1,10 @@
+using GlowNow.Identity.Application.Interfaces;
 using GlowNow.Identity.Domain.Entities;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace GlowNow.Identity.Infrastructure.Persistence;
 
-public sealed class IdentityDbContext : DbContext, IUnitOfWork
+public sealed class IdentityDbContext : DbContext, IIdentityUnitOfWork
 {
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options)
         : base(options)

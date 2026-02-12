@@ -9,16 +9,16 @@ namespace GlowNow.UnitTests.Team.Application.Commands.CreateStaffProfile;
 public class CreateStaffProfileCommandHandlerTests
 {
     private readonly IStaffProfileRepository _staffProfileRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITeamUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly CreateStaffProfileCommandHandler _handler;
 
     public CreateStaffProfileCommandHandlerTests()
     {
         _staffProfileRepository = Substitute.For<IStaffProfileRepository>();
-        _unitOfWork = Substitute.For<IUnitOfWork>();
+        _unitOfWork = Substitute.For<ITeamUnitOfWork>();
         _dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        
+
         _handler = new CreateStaffProfileCommandHandler(
             _staffProfileRepository,
             _unitOfWork,

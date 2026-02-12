@@ -19,7 +19,8 @@ internal sealed class RegisterBusinessCommandHandler : ICommandHandler<RegisterB
     private readonly IUserRepository _userRepository;
     private readonly IBusinessRepository _businessRepository;
     private readonly IBusinessMembershipRepository _membershipRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IIdentityUnitOfWork _identityUnitOfWork;
+    private readonly IBusinessUnitOfWork _businessUnitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public RegisterBusinessCommandHandler(
@@ -27,14 +28,16 @@ internal sealed class RegisterBusinessCommandHandler : ICommandHandler<RegisterB
         IUserRepository userRepository,
         IBusinessRepository businessRepository,
         IBusinessMembershipRepository membershipRepository,
-        IUnitOfWork unitOfWork,
+        IIdentityUnitOfWork identityUnitOfWork,
+        IBusinessUnitOfWork businessUnitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _cognitoService = cognitoService;
         _userRepository = userRepository;
         _businessRepository = businessRepository;
         _membershipRepository = membershipRepository;
-        _unitOfWork = unitOfWork;
+        _identityUnitOfWork = identityUnitOfWork;
+        _businessUnitOfWork = businessUnitOfWork;
         _dateTimeProvider = dateTimeProvider;
     }
 
@@ -133,7 +136,8 @@ internal sealed class RegisterBusinessCommandHandler : ICommandHandler<RegisterB
             _businessRepository.Add(business);
             _membershipRepository.Add(membership);
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _identityUnitOfWork.SaveChangesAsync(cancellationToken);
+            await _businessUnitOfWork.SaveChangesAsync(cancellationToken);
 
             return new RegisterBusinessResponse(user.Id, business.Id, user.Email);
         }

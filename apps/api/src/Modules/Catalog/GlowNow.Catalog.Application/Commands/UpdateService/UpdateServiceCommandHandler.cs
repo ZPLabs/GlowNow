@@ -1,7 +1,6 @@
 using GlowNow.Catalog.Application.Interfaces;
 using GlowNow.Catalog.Domain.Errors;
 using GlowNow.Catalog.Domain.ValueObjects;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using GlowNow.Infrastructure.Core.Application.Messaging;
 using GlowNow.SharedKernel.Domain.Errors;
 
@@ -14,12 +13,12 @@ internal sealed class UpdateServiceCommandHandler : ICommandHandler<UpdateServic
 {
     private readonly IServiceRepository _serviceRepository;
     private readonly IServiceCategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICatalogUnitOfWork _unitOfWork;
 
     public UpdateServiceCommandHandler(
         IServiceRepository serviceRepository,
         IServiceCategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork)
+        ICatalogUnitOfWork unitOfWork)
     {
         _serviceRepository = serviceRepository;
         _categoryRepository = categoryRepository;

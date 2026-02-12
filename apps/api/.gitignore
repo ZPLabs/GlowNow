@@ -8,3 +8,6 @@ obj/
 
 # User secrets
 secrets.json
+
+# Environment-specific settings (may contain credentials)
+appsettings.Development.json

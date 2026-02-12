@@ -1,6 +1,5 @@
 using GlowNow.Catalog.Application.Interfaces;
 using GlowNow.Catalog.Domain.Errors;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using GlowNow.Infrastructure.Core.Application.Messaging;
 using GlowNow.SharedKernel.Domain.Errors;
 
@@ -12,11 +11,11 @@ namespace GlowNow.Catalog.Application.Commands.DeleteService;
 internal sealed class DeleteServiceCommandHandler : ICommandHandler<DeleteServiceCommand>
 {
     private readonly IServiceRepository _serviceRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICatalogUnitOfWork _unitOfWork;
 
     public DeleteServiceCommandHandler(
         IServiceRepository serviceRepository,
-        IUnitOfWork unitOfWork)
+        ICatalogUnitOfWork unitOfWork)
     {
         _serviceRepository = serviceRepository;
         _unitOfWork = unitOfWork;

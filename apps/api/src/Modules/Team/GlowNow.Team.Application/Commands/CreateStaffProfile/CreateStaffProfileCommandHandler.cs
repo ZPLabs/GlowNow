@@ -16,12 +16,12 @@ internal sealed class CreateStaffProfileCommandHandler
     : ICommandHandler<CreateStaffProfileCommand, CreateStaffProfileResponse>
 {
     private readonly IStaffProfileRepository _staffProfileRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITeamUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public CreateStaffProfileCommandHandler(
         IStaffProfileRepository staffProfileRepository,
-        IUnitOfWork unitOfWork,
+        ITeamUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _staffProfileRepository = staffProfileRepository;

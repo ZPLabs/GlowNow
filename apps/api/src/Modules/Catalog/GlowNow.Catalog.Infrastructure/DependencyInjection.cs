@@ -1,7 +1,6 @@
 using GlowNow.Catalog.Application.Interfaces;
 using GlowNow.Catalog.Infrastructure.Persistence;
 using GlowNow.Catalog.Infrastructure.Persistence.Repositories;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +19,7 @@ public static class DependencyInjection
         services.AddDbContext<CatalogDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<CatalogDbContext>());
+        services.AddScoped<ICatalogUnitOfWork>(sp => sp.GetRequiredService<CatalogDbContext>());
         services.AddScoped<IServiceRepository, ServiceRepository>();
         services.AddScoped<IServiceCategoryRepository, ServiceCategoryRepository>();
 

@@ -16,13 +16,13 @@ internal sealed class CreateServiceCommandHandler
 {
     private readonly IServiceRepository _serviceRepository;
     private readonly IServiceCategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public CreateServiceCommandHandler(
         IServiceRepository serviceRepository,
         IServiceCategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork,
+        ICatalogUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _serviceRepository = serviceRepository;

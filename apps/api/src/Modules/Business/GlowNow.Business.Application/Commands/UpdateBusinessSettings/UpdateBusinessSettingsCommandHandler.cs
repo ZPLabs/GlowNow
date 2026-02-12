@@ -1,6 +1,5 @@
 using GlowNow.Business.Application.Interfaces;
 using GlowNow.Business.Domain.Errors;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using GlowNow.Infrastructure.Core.Application.Messaging;
 using GlowNow.SharedKernel.Domain.Errors;
 
@@ -12,11 +11,11 @@ namespace GlowNow.Business.Application.Commands.UpdateBusinessSettings;
 internal sealed class UpdateBusinessSettingsCommandHandler : ICommandHandler<UpdateBusinessSettingsCommand>
 {
     private readonly IBusinessRepository _businessRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IBusinessUnitOfWork _unitOfWork;
 
     public UpdateBusinessSettingsCommandHandler(
         IBusinessRepository businessRepository,
-        IUnitOfWork unitOfWork)
+        IBusinessUnitOfWork unitOfWork)
     {
         _businessRepository = businessRepository;
         _unitOfWork = unitOfWork;

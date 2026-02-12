@@ -1,10 +1,10 @@
+using GlowNow.Catalog.Application.Interfaces;
 using GlowNow.Catalog.Domain.Entities;
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace GlowNow.Catalog.Infrastructure.Persistence;
 
-public sealed class CatalogDbContext : DbContext, IUnitOfWork
+public sealed class CatalogDbContext : DbContext, ICatalogUnitOfWork
 {
     public CatalogDbContext(DbContextOptions<CatalogDbContext> options)
         : base(options)
