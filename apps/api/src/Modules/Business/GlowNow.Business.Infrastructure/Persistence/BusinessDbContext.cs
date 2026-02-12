@@ -1,10 +1,10 @@
-using GlowNow.Infrastructure.Core.Application.Interfaces;
+using GlowNow.Business.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using BusinessEntity = GlowNow.Business.Domain.Entities.Business;
 
 namespace GlowNow.Business.Infrastructure.Persistence;
 
-public sealed class BusinessDbContext : DbContext, IUnitOfWork
+public sealed class BusinessDbContext : DbContext, IBusinessUnitOfWork
 {
     public BusinessDbContext(DbContextOptions<BusinessDbContext> options)
         : base(options)

@@ -1,10 +1,10 @@
-using GlowNow.Infrastructure.Core.Application.Interfaces;
+using GlowNow.Team.Application.Interfaces;
 using GlowNow.Team.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace GlowNow.Team.Infrastructure.Persistence;
 
-public sealed class TeamDbContext : DbContext, IUnitOfWork
+public sealed class TeamDbContext : DbContext, ITeamUnitOfWork
 {
     public TeamDbContext(DbContextOptions<TeamDbContext> options)
         : base(options)

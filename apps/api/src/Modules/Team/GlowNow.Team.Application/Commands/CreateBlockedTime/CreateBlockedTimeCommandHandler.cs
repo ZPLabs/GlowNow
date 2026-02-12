@@ -17,13 +17,13 @@ internal sealed class CreateBlockedTimeCommandHandler
 {
     private readonly IStaffProfileRepository _staffProfileRepository;
     private readonly IBlockedTimeRepository _blockedTimeRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITeamUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public CreateBlockedTimeCommandHandler(
         IStaffProfileRepository staffProfileRepository,
         IBlockedTimeRepository blockedTimeRepository,
-        IUnitOfWork unitOfWork,
+        ITeamUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _staffProfileRepository = staffProfileRepository;

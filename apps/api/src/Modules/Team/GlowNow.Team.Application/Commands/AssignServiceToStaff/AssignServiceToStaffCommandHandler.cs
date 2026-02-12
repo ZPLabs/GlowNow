@@ -17,13 +17,13 @@ internal sealed class AssignServiceToStaffCommandHandler
 {
     private readonly IStaffProfileRepository _staffProfileRepository;
     private readonly IServiceValidator _serviceValidator;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITeamUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public AssignServiceToStaffCommandHandler(
         IStaffProfileRepository staffProfileRepository,
         IServiceValidator serviceValidator,
-        IUnitOfWork unitOfWork,
+        ITeamUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _staffProfileRepository = staffProfileRepository;

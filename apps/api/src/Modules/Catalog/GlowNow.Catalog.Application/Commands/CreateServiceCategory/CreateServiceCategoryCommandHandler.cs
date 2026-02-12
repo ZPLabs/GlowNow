@@ -14,12 +14,12 @@ internal sealed class CreateServiceCategoryCommandHandler
     : ICommandHandler<CreateServiceCategoryCommand, CreateServiceCategoryResponse>
 {
     private readonly IServiceCategoryRepository _categoryRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICatalogUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public CreateServiceCategoryCommandHandler(
         IServiceCategoryRepository categoryRepository,
-        IUnitOfWork unitOfWork,
+        ICatalogUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _categoryRepository = categoryRepository;

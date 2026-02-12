@@ -16,12 +16,12 @@ internal sealed class CancelTimeOffCommandHandler
     : ICommandHandler<CancelTimeOffCommand>
 {
     private readonly ITimeOffRepository _timeOffRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITeamUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public CancelTimeOffCommandHandler(
         ITimeOffRepository timeOffRepository,
-        IUnitOfWork unitOfWork,
+        ITeamUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _timeOffRepository = timeOffRepository;

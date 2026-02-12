@@ -1,4 +1,3 @@
-using GlowNow.Infrastructure.Core.Application.Interfaces;
 using GlowNow.Team.Application.Interfaces;
 using GlowNow.Team.Infrastructure.Persistence;
 using GlowNow.Team.Infrastructure.Persistence.Repositories;
@@ -21,7 +20,7 @@ public static class DependencyInjection
         services.AddDbContext<TeamDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<TeamDbContext>());
+        services.AddScoped<ITeamUnitOfWork>(sp => sp.GetRequiredService<TeamDbContext>());
         services.AddScoped<IStaffProfileRepository, StaffProfileRepository>();
         services.AddScoped<ITimeOffRepository, TimeOffRepository>();
         services.AddScoped<IBlockedTimeRepository, BlockedTimeRepository>();

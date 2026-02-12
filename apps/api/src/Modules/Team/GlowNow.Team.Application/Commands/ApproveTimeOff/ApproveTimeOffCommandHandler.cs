@@ -16,12 +16,12 @@ internal sealed class ApproveTimeOffCommandHandler
     : ICommandHandler<ApproveTimeOffCommand>
 {
     private readonly ITimeOffRepository _timeOffRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITeamUnitOfWork _unitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
 
     public ApproveTimeOffCommandHandler(
         ITimeOffRepository timeOffRepository,
-        IUnitOfWork unitOfWork,
+        ITeamUnitOfWork unitOfWork,
         IDateTimeProvider dateTimeProvider)
     {
         _timeOffRepository = timeOffRepository;
