@@ -1,8 +1,6 @@
-using Amazon.CognitoIdentityProvider;
 using GlowNow.Identity.Application.Interfaces;
 using GlowNow.Identity.Infrastructure.Persistence;
 using GlowNow.Identity.Infrastructure.Persistence.Repositories;
-using GlowNow.Identity.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,24 +21,6 @@ public static class DependencyInjection
 
         services.AddScoped<IIdentityUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
 
-        // Configure Cognito
-        services.Configure<CognitoSettings>(configuration.GetSection(CognitoSettings.SectionName));
-
-        services.AddSingleton<IAmazonCognitoIdentityProvider>(sp =>
-        {
-            var settings = configuration.GetSection(CognitoSettings.SectionName).Get<CognitoSettings>();
-            var region = Amazon.RegionEndpoint.GetBySystemName(settings?.Region ?? "us-east-1");
-
-            if (!string.IsNullOrEmpty(settings?.AccessKey) && !string.IsNullOrEmpty(settings?.SecretKey))
-            {
-                var credentials = new Amazon.Runtime.BasicAWSCredentials(settings.AccessKey, settings.SecretKey);
-                return new AmazonCognitoIdentityProviderClient(credentials, region);
-            }
-
-            return new AmazonCognitoIdentityProviderClient(region);
-        });
-
-        services.AddScoped<ICognitoIdentityProvider, CognitoIdentityProvider>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IBusinessMembershipRepository, BusinessMembershipRepository>();
 

@@ -37,6 +37,16 @@ builder.Services
     .AddBookingModule(builder.Configuration)
     .AddNotificationsModule();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Add MVC Controllers
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(GlowNow.Identity.Api.IdentityModule).Assembly)
@@ -59,7 +69,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuer = true,
             ValidIssuer = $"https://cognito-idp.{region}.amazonaws.com/{userPoolId}",
-            ValidateAudience = false, // Cognito access tokens don't have an aud claim by default
+            ValidateAudience = false, // ID tokens have aud = client ID; access tokens have no aud. Disabled to accept both.
             ValidateLifetime = true
         };
     });
@@ -69,6 +79,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseCors("DefaultPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
