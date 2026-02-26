@@ -2,199 +2,121 @@
 
 > Living document tracking the latest development status. Update this after each meaningful milestone.
 
-**Last updated:** 2026-02-11
-**Current branch:** `feature/login-implementation`
-**Latest commit on main:** `ca44e2b` — Merge pull request #5 from ZPLabs/feature/team-module
+**Last updated:** 2026-02-26
+**Current branch:** `feat/cognito-auth-migration`
+**Latest commit on main:** `7411192` — Merge pull request #7 from ZPLabs/fix/module-unit-of-work
+**Latest commit on branch:** `8b9a9d0` — feat(auth): migrate to client-side Cognito auth via AWS Amplify
 
 ---
 
 ## Project Phase
 
-**Phase: Team Module Complete / Pre-MVP**
+**Phase: Auth Migration Complete / Pre-MVP**
 
-Major architecture refactor completed. The API has been restructured from a single-project-per-module layout to a 4-project-per-module architecture (Domain, Application, Infrastructure, Api). Minimal APIs have been converted to MVC Controllers. The Team module is now fully implemented with staff management and scheduling. EF Core migrations have been generated for Identity, Business, and Catalog modules. 88+ unit tests pass. The API is ready for local PostgreSQL integration testing.
+Client-side Cognito authentication via AWS Amplify is fully implemented and working. Email registration with verification, email login, and Google OAuth login are all functional end-to-end. The API is now a pure JWT consumer — it never handles credentials. Lazy user creation in middleware handles both email and Google-federated users transparently. The mobile app (Expo Router) has been scaffolded with the same auth flows. The project is ready for the next feature module (Clients or Booking).
 
 ---
 
-## Recent Major Refactor (2026-02-10)
+## Recent Work (2026-02-26)
 
-### 4-Project-Per-Module Architecture
+### Cognito Auth Migration — Client-Side Amplify
+
+**Commit:** `8b9a9d0` — "feat(auth): migrate to client-side Cognito auth via AWS Amplify"
+
+**Branch:** `feat/cognito-auth-migration`
+
+#### What Changed
+
+**API:**
+- Deleted Login, Logout, RefreshToken commands and all related files
+- Deleted `ICognitoIdentityProvider`, `CognitoIdentityProvider`, `AuthTokens`
+- Removed `AWSSDK.CognitoIdentityProvider` package
+- Rewrote `RegisterBusinessCommand`: removed user fields (email, password, names) — reads authenticated user from `ICurrentUserProvider` instead of creating via Cognito Admin API
+- Rewrote `CurrentUserMiddleware`: lazy-creates a local `User` record on the first authenticated request using JWT claims. Handles `given_name`/`family_name` claims, falls back to `name` claim (for Google federation), falls back to email prefix
+- Added CORS policy for `http://localhost:3000`
+- Stripped `CognitoSettings` to `UserPoolId` + `Region` only (removed `ClientId`, `AccessKey`, `SecretKey`)
+- Removed unused `services.Configure<CognitoSettings>` from DI
+
+**Web (`apps/web`):**
+- Added `aws-amplify` dependency
+- New `src/lib/auth/amplify.ts` — Amplify configuration (user pool, OAuth domain, callbacks)
+- Rewrote `AuthContext`: all auth via Amplify SDK (`signIn`, `signUp`, `confirmSignUp`, `signInWithRedirect`, `signOut`), Hub listener for OAuth callback, `UserAlreadyAuthenticatedException` handling
+- API client (`client.ts`) now fetches Cognito **ID token** (not access token) from Amplify and attaches as Bearer — ID token contains `email`/`given_name`/`family_name` needed by lazy user creation middleware
+- New pages: `/verify-email`, `/register/business`, `/auth/callback`
+- New components: `VerifyEmailForm`, `BusinessRegistrationForm`
+- Updated `LoginForm`: Google sign-in button, `UserNotConfirmedException` → redirect to verify-email
+- Updated `RegisterForm`: removed business fields, wires `phoneNumber` through to Cognito `signUp`
+- Deleted `src/lib/auth/tokens.ts` (Amplify manages token storage in cookies)
+- Deleted server-side auth API functions (login, register, refreshToken, logout)
+
+**Mobile (`apps/mobile`):**
+- Converted to Expo Router structure (deleted `App.tsx`, `index.ts`)
+- Added auth screens: login, register, verify-email, register-business, dashboard
+- Added `src/contexts/AuthContext.tsx`, `src/lib/auth/amplify.ts`, API client — mirrors web implementation using `AsyncStorage` for token storage
+
+**Docs:**
+- Added `docs/AUTH.md` — full explanation of all auth flows, token design, lazy user creation, and key design decisions
+
+---
+
+## Previous Major Work
+
+### Cross-Module UnitOfWork Fix (2026-02-14)
+
+**Commit:** `3e5c581` — "fix(api): resolve cross-module UnitOfWork conflict causing user data loss on registration"
+
+- Fixed `RegisterBusinessCommand` saving to both `IIdentityUnitOfWork` and `IBusinessUnitOfWork` correctly, preventing cross-module data loss when business registration involved multiple DbContexts.
+
+### Login Implementation (2026-02-13)
+
+**Commit:** `c2b46c1` — "feat(web): implement authentication pages with login and register forms"
+
+- Implemented web authentication pages with `LoginForm` and `RegisterForm`
+- API-proxied auth flow (pre-migration)
+
+### 4-Project-Per-Module Architecture (2026-02-10)
 
 **Commit:** `2c34bbd` — "refactor(api): restructure to 4-project-per-module architecture with MVC controllers"
 
-#### Before (single .csproj per module):
-```
-src/Modules/GlowNow.Business/
-├── Application/
-├── Domain/
-├── Infrastructure/
-└── GlowNow.Business.csproj
-```
-
-#### After (4 .csproj per module):
-```
-src/Modules/Business/
-├── GlowNow.Business.Domain/
-├── GlowNow.Business.Application/
-├── GlowNow.Business.Infrastructure/
-└── GlowNow.Business.Api/
-```
-
-#### Key Changes:
-
-1. **Shared layer split:**
-   - `GlowNow.SharedKernel` — Domain primitives (Entity, AggregateRoot, ValueObject, Result, Error)
-   - `GlowNow.Infrastructure.Core` — Cross-cutting concerns (behaviors, interfaces, providers)
-
-2. **Minimal APIs → MVC Controllers:**
-   - All endpoints converted from `app.MapGet/MapPost` to `[ApiController]` classes
-   - Better OpenAPI/Swagger support and route grouping
-   - Each module's Api project contains its own controllers
-
-3. **Host project relocated:**
-   - From `src/GlowNow.Api/` to `src/Api/GlowNow.Api/` (composition root)
-
-4. **New project structure:**
-   ```
-   src/
-   ├── Api/GlowNow.Api/              # Composition root (host)
-   ├── Core/GlowNow.SharedKernel/    # Domain primitives
-   ├── Core/GlowNow.Infrastructure.Core/  # Cross-cutting
-   └── Modules/{Module}/             # Domain, Application, Infrastructure, Api
-   ```
-
-### Follow-up Fix (2026-02-11)
-
-**Commit:** `1bdd389` — "fix(api): fix EF Core/Npgsql version mismatch and enhance Cognito auth"
-
-- Updated Npgsql.EntityFrameworkCore.PostgreSQL to 10.0.0-preview.3 (matches EF Core)
-- Added AccessKey/SecretKey support in CognitoSettings for local development
-- Enhanced CognitoIdentityProvider with better error logging
-- Generated initial EF Core migrations for Identity, Business, and Catalog modules
+- Each module split into Domain, Application, Infrastructure, Api projects
+- Minimal APIs converted to MVC Controllers
+- SharedKernel / Infrastructure.Core split
 
 ---
 
 ## What's Done
 
-### Monorepo Scaffold (merged to `main`)
+### Infrastructure
 
-- Turborepo + npm workspaces with `apps/web`, `apps/mobile`, `apps/api`, and shared `packages/`
-- Next.js 16 web app (React 19, CSS Modules) — default template, no custom pages
-- Expo 54 mobile app — blank TypeScript template, no custom screens
-- Shared packages: `@glownow/ui`, `@glownow/eslint-config`, `@glownow/typescript-config`
-- .NET 10 API with 4-project-per-module modular monolith architecture
-- 7 domain modules: Identity, Business, Catalog, Team, Clients, Booking, Notifications
-- `GET /health` and `GET /health/ready` endpoints
-- Docker infrastructure scripts
-- ARCHITECTURE.md, PRD.md, GIT_GUIDE.md, CLAUDE.md context files
+- Turborepo + npm workspaces monorepo
+- .NET 10 modular monolith API (4-project-per-module Clean Architecture)
+- PostgreSQL via Docker Compose (EF Core migrations generated for Identity, Business, Catalog)
+- CORS configured for local development
+- JWT Bearer auth against Cognito User Pool
+- MediatR pipeline: Logging → Validation → Transaction → Performance behaviors
 
-### Core Foundation (merged to `main`)
+### Authentication (fully working end-to-end)
 
-#### GlowNow.SharedKernel
-- **Domain Primitives:** `Entity<TId>`, `AggregateRoot<TId>`, `ValueObject`, `ITenantScoped`, `IDomainEvent`
-- **Result/Error Pattern:** `Result`, `Result<TValue>`, `Error` (sealed record), `ValidationError`
-- **Value Objects:** `Email`, `PhoneNumber` (Ecuador +593 format)
+- Email registration → verification code → confirm → login
+- Email login via Cognito SRP (password never leaves browser)
+- Google OAuth login via Cognito federation
+- Lazy local user creation on first API call (handles both email and Google users)
+- Token auto-refresh managed by Amplify
+- Business registration post-auth (owner role assigned)
+- Web: all auth pages and flows implemented
+- Mobile: Expo Router auth scaffold implemented
 
-#### GlowNow.Infrastructure.Core
-- **CQRS Abstractions:** `ICommand`/`IQuery` with MediatR, handler interfaces
-- **MediatR Pipeline Behaviors** (in order): Logging, Validation, Transaction, Performance
-- **Application Interfaces:** `IUnitOfWork`, `IDateTimeProvider`, `ITenantProvider`, `ITransactionManager`, `ICurrentUserProvider`
-- **Default Implementations:** `SystemDateTimeProvider`, `NoOpTransactionManager`, `HttpTenantProvider`
-- **DI Registration:** `AddInfrastructureCoreServices(params Assembly[])`
+### API Modules
 
-### Identity Module (merged to `main`)
-
-- **Domain Layer:**
-  - `User` aggregate root — Email, FirstName, LastName, PhoneNumber?, CognitoUserId, timestamps, Memberships
-  - `BusinessMembership` entity — UserId, BusinessId, Role, CreatedAtUtc
-  - `UserRole` enum — Owner, Manager, Staff, Receptionist, Client
-  - `UserRegisteredEvent` domain event
-  - `IdentityErrors` — EmailAlreadyInUse, InvalidCredentials, UserNotFound, CognitoError, InvalidRefreshToken
-
-- **Application Layer (CQRS):**
-  - `RegisterBusinessCommand` — Creates Cognito user + local User + Business + BusinessMembership (Owner role)
-  - `LoginCommand` — Authenticates via Cognito, looks up local User for memberships
-  - `LogoutCommand` — Global sign-out via Cognito
-  - `RefreshTokenCommand` — Token refresh via Cognito
-  - `GetCurrentUserQuery` — Loads User + memberships with business names
-
-- **Infrastructure Layer:**
-  - `IdentityDbContext` with EF Core configurations
-  - Repository implementations: `UserRepository`, `BusinessMembershipRepository`
-  - `CognitoIdentityProvider` — AWS SDK adapter with AccessKey/SecretKey support
-
-- **API Layer:**
-  - `AuthController` — MVC controller for all auth endpoints
-
-### Business Module (merged to `main`)
-
-- **Domain Layer:**
-  - `Business` aggregate root — Name, Ruc, Address, PhoneNumber?, Email, Description?, LogoUrl?, OperatingHours
-  - `Ruc` value object — Validates 10-digit cedula or 13-digit RUC
-  - `TimeRange`, `OperatingHours` value objects
-  - `BusinessRegisteredEvent` domain event
-
-- **Application Layer (CQRS):**
-  - `SetOperatingHoursCommand`, `UpdateBusinessSettingsCommand`
-  - `GetBusinessDetailsQuery`, `GetOperatingHoursQuery`
-
-- **Infrastructure Layer:**
-  - `BusinessDbContext` with JSONB column for operating hours
-  - `BusinessRepository` implementation
-  - Initial EF Core migration generated
-
-- **API Layer:**
-  - `BusinessesController` — MVC controller for business CRUD
-
-### Catalog Module (merged to `main`)
-
-- **Domain Layer:**
-  - `Service` aggregate root — Name, Description?, Duration, Price, BufferTimeMinutes, CategoryId?, IsActive, DisplayOrder, IsDeleted
-  - `ServiceCategory` aggregate root — Name, Description?, DisplayOrder, IsDeleted
-  - `Duration`, `Money` value objects
-
-- **Application Layer (CQRS):**
-  - Full CRUD commands for Services and Categories
-  - Query handlers for listing and filtering
-
-- **Infrastructure Layer:**
-  - `CatalogDbContext` with owned value objects
-  - `ServiceRepository`, `ServiceCategoryRepository` implementations
-  - Initial EF Core migration generated
-
-- **API Layer:**
-  - `ServicesController`, `ServiceCategoriesController` — MVC controllers
-
-### Team Module (merged to `main`)
-
-- **Domain Layer:**
-  - `StaffProfile` aggregate root — UserId, BusinessId, DisplayName, Status, WeeklySchedule
-  - `BlockedTime`, `TimeOff`, `StaffServiceAssignment` entities
-  - `WeeklySchedule`, `WorkDay` value objects
-  - `StaffStatus`, `TimeOffStatus`, `TimeOffType` enums
-  - `TeamErrors`, domain events
-
-- **Application Layer (CQRS):**
-  - Staff profile CRUD commands
-  - Time off request/approve/reject/cancel commands
-  - Blocked time management
-  - Service assignment commands
-  - Schedule and availability queries
-
-- **Infrastructure Layer:**
-  - `TeamDbContext` with EF Core configurations
-  - Repository implementations
-
-- **API Layer:**
-  - `StaffController` — comprehensive MVC controller with 20+ endpoints
-
-### EF Core Migrations
-
-| Module | Migration | Tables |
-|--------|-----------|--------|
-| Identity | `20260211003426_InitialCreate` | users, businesses, business_memberships |
-| Business | `20260211003443_InitialCreate` | businesses (with JSONB operating_hours) |
-| Catalog | `20260211003502_InitialCreate` | services, service_categories |
+| Module | Status | Notes |
+|--------|--------|-------|
+| Identity | **Complete** | Auth endpoints, user/membership management |
+| Business | **Complete** | Business CRUD, operating hours |
+| Catalog | **Complete** | Services and categories |
+| Team | **Complete** | Staff profiles, scheduling, time-off, availability |
+| Clients | Not started | — |
+| Booking | Not started | — |
+| Notifications | Scaffold only | Event-driven, not wired up |
 
 ### Unit Tests — 88+ passing
 
@@ -205,10 +127,23 @@ src/Modules/Business/
 | Business Value Objects (Ruc) | 7 |
 | Business Entities (Business) | 4 |
 | Identity Entities (User, BusinessMembership) | 8 |
-| Identity Handlers | 14 |
-| Identity Validators | 13 |
+| Identity Handlers (RegisterBusiness) | 4 |
+| Identity Validators (RegisterBusiness) | 4 |
 | Team Domain Layer | ~13 |
-| **Total** | **88+** |
+| **Total** | **69+** |
+
+> Note: Login, Logout, RefreshToken handler/validator tests deleted as part of Cognito migration.
+
+### Docs
+
+| File | Contents |
+|------|----------|
+| `docs/PRD.md` | Product requirements |
+| `docs/ARCHITECTURE.md` | API architecture patterns and conventions |
+| `docs/AUTH.md` | Auth flows, token design, lazy user creation |
+| `docs/GIT_GUIDE.md` | Branching and commit conventions |
+| `apps/api/CLAUDE.md` | API coding conventions for AI |
+| `apps/web/CLAUDE.md` | Web coding conventions for AI |
 
 ---
 
@@ -216,41 +151,30 @@ src/Modules/Business/
 
 ### Immediate Next Steps
 
-1. **Start PostgreSQL** via Docker Compose
-2. **Apply EF Core migrations** — `dotnet ef database update`
-3. **Smoke test with real Cognito User Pool** — configure `appsettings.Development.json`
-4. **Clients Module** — Client profiles and history
-5. **Booking Module** — Core booking engine
-
-### Not Started (by module)
-
-| Module | Status | Dependencies |
-|--------|--------|-------------|
-| Identity | **Complete** | Shared, Business |
-| Business | **Complete** | Shared only |
-| Catalog | **Complete** | Shared only |
-| Team | **Complete** | Identity, Catalog |
-| Clients | Not started | Identity (optional) |
-| Booking | Not started | Team, Catalog, Clients |
-| Notifications | Scaffold only | Shared only (event-driven) |
+1. **Merge `feat/cognito-auth-migration` → `main`** via PR
+2. **Post-login routing** — after login, redirect based on whether user has a business membership (→ `/register/business` if not, → `/dashboard` if yes)
+3. **Protected routes** — redirect unauthenticated users away from `/dashboard` and `/register/business`
+4. **Clients Module** — client profiles, search, history
+5. **Booking Module** — availability engine, appointment creation
 
 ### Infrastructure / Cross-Cutting Not Started
 
-- PostgreSQL database setup (local Docker Compose) — config exists, not applied
 - Global exception handling middleware
 - Correlation ID middleware
-- CORS configuration
 - Rate limiting
-- Structured logging (Serilog or similar)
+- Structured logging (Serilog)
 - CI/CD pipeline
 - AWS infrastructure (Terraform)
+- Production Cognito domain (custom domain vs auto-generated)
 
 ### Frontend Not Started
 
-- No custom pages or components in the web app
-- No custom screens in the mobile app
-- No API client / SDK generation
-- No design system beyond the default `@glownow/ui` components
+- Dashboard page (placeholder only)
+- Post-login routing logic (membership check)
+- Protected route guards
+- Business settings pages
+- Service catalog management UI
+- Booking flow UI
 
 ---
 
@@ -260,60 +184,31 @@ src/Modules/Business/
 |------|----------|-----------|
 | 2026-01-20 | Modular monolith over microservices | MVP scale doesn't justify distributed complexity |
 | 2026-02-07 | `Result<T> : Result` inheritance | Enables pipeline behavior constraints |
-| 2026-02-08 | AWS Cognito for authentication | API-proxied flow, clients never interact with Cognito directly |
 | 2026-02-08 | Local User shadow in PostgreSQL | Enables multi-tenancy joins without Cognito limitations |
 | 2026-02-09 | OperatingHours as JSONB | Flexible weekly schedule storage |
 | 2026-02-09 | Soft deletes for Services and Categories | Preserves booking history integrity |
-| 2026-02-10 | **4-project-per-module architecture** | Better separation of concerns, cleaner dependency graph, easier testing |
-| 2026-02-10 | **MVC Controllers over Minimal APIs** | Better OpenAPI support, route grouping, familiar patterns |
-| 2026-02-10 | **SharedKernel/Infrastructure.Core split** | Domain primitives isolated from cross-cutting infrastructure |
-
----
-
-## Project Structure
-
-```
-apps/api/
-├── GlowNow.Api.sln
-├── src/
-│   ├── Api/
-│   │   └── GlowNow.Api/              # Composition root (host)
-│   ├── Core/
-│   │   ├── GlowNow.SharedKernel/     # Domain primitives
-│   │   └── GlowNow.Infrastructure.Core/  # Cross-cutting
-│   └── Modules/
-│       ├── Identity/
-│       │   ├── GlowNow.Identity.Domain/
-│       │   ├── GlowNow.Identity.Application/
-│       │   ├── GlowNow.Identity.Infrastructure/
-│       │   └── GlowNow.Identity.Api/
-│       ├── Business/
-│       │   └── ... (same 4-project layout)
-│       ├── Catalog/
-│       ├── Team/
-│       ├── Clients/
-│       ├── Booking/
-│       └── Notifications/
-└── tests/
-    ├── GlowNow.UnitTests/
-    ├── GlowNow.IntegrationTests/
-    └── GlowNow.ApiTests/
-```
+| 2026-02-10 | 4-project-per-module architecture | Better separation of concerns, cleaner dependency graph, easier testing |
+| 2026-02-10 | MVC Controllers over Minimal APIs | Better OpenAPI support, route grouping, familiar patterns |
+| 2026-02-10 | SharedKernel/Infrastructure.Core split | Domain primitives isolated from cross-cutting infrastructure |
+| 2026-02-26 | Client-side auth via Amplify SDK | Passwords never transit the API; enables Google OAuth and email verification natively |
+| 2026-02-26 | ID token sent to API (not access token) | ID token contains email/name claims needed for lazy user creation; access token only has `sub` |
+| 2026-02-26 | Lazy user creation in middleware | Single code path for all auth providers; no explicit registration endpoint needed |
 
 ---
 
 ## API Endpoints Summary
 
 ### Authentication (`/api/v1/auth`)
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/register` | Anonymous | Register business + owner |
-| POST | `/login` | Anonymous | Login, get tokens |
-| POST | `/refresh` | Anonymous | Refresh access token |
-| POST | `/logout` | Required | Global sign-out |
+| POST | `/register-business` | Required | Create business + owner membership (user already exists in Cognito) |
 | GET | `/me` | Required | Get current user + memberships |
 
+> Login, logout, refresh, and user creation are handled client-side by Amplify SDK. The API no longer has these endpoints.
+
 ### Business (`/api/v1/businesses`)
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/{id}` | Required | Get business details |
@@ -322,6 +217,7 @@ apps/api/
 | PUT | `/{id}/settings` | Required | Update name, description, logo |
 
 ### Service Categories (`/api/v1/services/categories`)
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/` | Required | Create category |
@@ -330,6 +226,7 @@ apps/api/
 | DELETE | `/{id}` | Required | Soft-delete category |
 
 ### Services (`/api/v1/services`)
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/` | Required | Create service |
@@ -340,6 +237,7 @@ apps/api/
 | DELETE | `/{id}` | Required | Soft-delete service |
 
 ### Staff (`/api/v1/staff`)
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/` | Required | Create staff profile |
