@@ -15,30 +15,30 @@ namespace GlowNow.Identity.Application.Commands.RegisterBusiness;
 
 internal sealed class RegisterBusinessCommandHandler : ICommandHandler<RegisterBusinessCommand, RegisterBusinessResponse>
 {
-    private readonly ICognitoIdentityProvider _cognitoService;
     private readonly IUserRepository _userRepository;
     private readonly IBusinessRepository _businessRepository;
     private readonly IBusinessMembershipRepository _membershipRepository;
     private readonly IIdentityUnitOfWork _identityUnitOfWork;
     private readonly IBusinessUnitOfWork _businessUnitOfWork;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ICurrentUserProvider _currentUserProvider;
 
     public RegisterBusinessCommandHandler(
-        ICognitoIdentityProvider cognitoService,
         IUserRepository userRepository,
         IBusinessRepository businessRepository,
         IBusinessMembershipRepository membershipRepository,
         IIdentityUnitOfWork identityUnitOfWork,
         IBusinessUnitOfWork businessUnitOfWork,
-        IDateTimeProvider dateTimeProvider)
+        IDateTimeProvider dateTimeProvider,
+        ICurrentUserProvider currentUserProvider)
     {
-        _cognitoService = cognitoService;
         _userRepository = userRepository;
         _businessRepository = businessRepository;
         _membershipRepository = membershipRepository;
         _identityUnitOfWork = identityUnitOfWork;
         _businessUnitOfWork = businessUnitOfWork;
         _dateTimeProvider = dateTimeProvider;
+        _currentUserProvider = currentUserProvider;
     }
 
     public async Task<Result<RegisterBusinessResponse>> Handle(
@@ -46,19 +46,8 @@ internal sealed class RegisterBusinessCommandHandler : ICommandHandler<RegisterB
         CancellationToken cancellationToken)
     {
         // 1. Validate Value Objects
-        var emailResult = Email.Create(command.Email);
-        if (emailResult.IsFailure) return Result.Failure<RegisterBusinessResponse>(emailResult.Error);
-
         var rucResult = RucVO.Create(command.BusinessRuc);
         if (rucResult.IsFailure) return Result.Failure<RegisterBusinessResponse>(rucResult.Error);
-
-        PhoneNumber? userPhoneNumber = null;
-        if (command.PhoneNumber is not null)
-        {
-            var result = PhoneNumber.Create(command.PhoneNumber);
-            if (result.IsFailure) return Result.Failure<RegisterBusinessResponse>(result.Error);
-            userPhoneNumber = result.Value;
-        }
 
         PhoneNumber? businessPhoneNumber = null;
         if (command.BusinessPhoneNumber is not null)
@@ -77,75 +66,48 @@ internal sealed class RegisterBusinessCommandHandler : ICommandHandler<RegisterB
         }
 
         // 2. Check availability
-        if (await _userRepository.GetByEmailAsync(emailResult.Value, cancellationToken) is not null)
-        {
-            return Result.Failure<RegisterBusinessResponse>(IdentityErrors.EmailAlreadyInUse);
-        }
-
         if (await _businessRepository.ExistsByRucAsync(rucResult.Value, cancellationToken))
         {
             return Result.Failure<RegisterBusinessResponse>(BusinessErrors.DuplicateRuc);
         }
 
-        // 3. Create Cognito User
-        var attributes = new Dictionary<string, string>
+        // 3. Get existing user (created by middleware)
+        if (!_currentUserProvider.UserId.HasValue)
         {
-            { "email", emailResult.Value },
-            { "given_name", command.FirstName },
-            { "family_name", command.LastName }
-        };
-
-        var cognitoResult = await _cognitoService.RegisterUserAsync(command.Email, command.Password, attributes);
-        if (cognitoResult.IsFailure)
-        {
-            return Result.Failure<RegisterBusinessResponse>(cognitoResult.Error);
+            return Result.Failure<RegisterBusinessResponse>(IdentityErrors.UserNotFound);
         }
 
-        string cognitoUserId = cognitoResult.Value;
-
-        try
+        User? user = await _userRepository.GetByIdAsync(_currentUserProvider.UserId.Value, cancellationToken);
+        if (user is null)
         {
-            DateTime now = _dateTimeProvider.UtcNow;
-
-            // 4. Create local records
-            var user = User.Create(
-                emailResult.Value,
-                command.FirstName,
-                command.LastName,
-                userPhoneNumber,
-                cognitoUserId,
-                now);
-
-            var business = BusinessEntity.Create(
-                command.BusinessName,
-                rucResult.Value,
-                command.BusinessAddress,
-                businessPhoneNumber,
-                businessEmail ?? emailResult.Value,
-                now);
-
-            var membership = BusinessMembership.Create(
-                user.Id,
-                business.Id,
-                UserRole.Owner,
-                now);
-
-            user.AddMembership(membership);
-
-            _userRepository.Add(user);
-            _businessRepository.Add(business);
-            _membershipRepository.Add(membership);
-
-            await _identityUnitOfWork.SaveChangesAsync(cancellationToken);
-            await _businessUnitOfWork.SaveChangesAsync(cancellationToken);
-
-            return new RegisterBusinessResponse(user.Id, business.Id, user.Email);
+            return Result.Failure<RegisterBusinessResponse>(IdentityErrors.UserNotFound);
         }
-        catch
-        {
-            // 5. Compensating action: Delete Cognito user if local DB fails
-            await _cognitoService.DeleteUserAsync(cognitoUserId);
-            throw;
-        }
+
+        DateTime now = _dateTimeProvider.UtcNow;
+
+        // 4. Create business records
+        var business = BusinessEntity.Create(
+            command.BusinessName,
+            rucResult.Value,
+            command.BusinessAddress,
+            businessPhoneNumber,
+            businessEmail ?? user.Email,
+            now);
+
+        var membership = BusinessMembership.Create(
+            user.Id,
+            business.Id,
+            UserRole.Owner,
+            now);
+
+        user.AddMembership(membership);
+
+        _businessRepository.Add(business);
+        _membershipRepository.Add(membership);
+
+        await _identityUnitOfWork.SaveChangesAsync(cancellationToken);
+        await _businessUnitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new RegisterBusinessResponse(user.Id, business.Id, user.Email);
     }
 }

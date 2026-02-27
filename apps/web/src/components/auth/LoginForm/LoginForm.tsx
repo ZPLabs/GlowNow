@@ -9,7 +9,6 @@ import { Alert } from "@/components/ui/Alert";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useAuth } from "@/hooks/useAuth";
 import { required, email, compose } from "@/lib/validation/rules";
-import { ApiException } from "@/types/api";
 import styles from "./LoginForm.module.css";
 
 const initialValues = {
@@ -24,7 +23,7 @@ const validationRules = {
 
 export function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { signInWithEmail, signInWithGoogle } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   const { getFieldProps, getFieldError, handleSubmit, isSubmitting } =
@@ -34,16 +33,13 @@ export function LoginForm() {
       onSubmit: async (values) => {
         setError(null);
         try {
-          await login({
-            email: values.email,
-            password: values.password,
-          });
+          await signInWithEmail(values.email, values.password);
           router.push("/dashboard");
-        } catch (err) {
-          if (err instanceof ApiException) {
-            setError(err.message);
+        } catch (err: any) {
+          if (err.name === 'UserNotConfirmedException') {
+            router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
           } else {
-            setError("An unexpected error occurred. Please try again.");
+            setError(err.message || "An unexpected error occurred. Please try again.");
           }
         }
       },
@@ -80,6 +76,29 @@ export function LoginForm() {
 
       <Button type="submit" isLoading={isSubmitting} className={styles.submitButton}>
         Sign in
+      </Button>
+
+      <div className={styles.divider}>
+        <span>or</span>
+      </div>
+
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={async () => {
+          setError(null);
+          try {
+            await signInWithGoogle();
+            // Only reached if user was already signed in (signInWithRedirect
+            // normally navigates the browser away before this line executes)
+            router.push("/dashboard");
+          } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to sign in with Google.");
+          }
+        }}
+        className={styles.googleButton}
+      >
+        Sign in with Google
       </Button>
 
       <p className={styles.footer}>

@@ -37,6 +37,33 @@
   margin-top: 0.5rem;
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: rgba(128, 128, 128, 0.5);
+  font-size: 0.875rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.divider::before {
+  margin-right: 1rem;
+}
+
+.divider::after {
+  margin-left: 1rem;
+}
+
+.googleButton {
+  width: 100%;
+}
+
 .footer {
   text-align: center;
   font-size: 0.875rem;

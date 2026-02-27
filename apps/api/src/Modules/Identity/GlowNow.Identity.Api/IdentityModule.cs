@@ -18,10 +18,10 @@ public static class IdentityModule
         IConfiguration configuration)
     {
         // Register validators from Application assembly
-        services.AddValidatorsFromAssemblyContaining<Application.Commands.Login.LoginCommandValidator>();
+        services.AddValidatorsFromAssemblyContaining<Application.Commands.RegisterBusiness.RegisterBusinessCommand>();
 
         // Register MediatR handlers from Application assembly
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Application.Commands.Login.LoginCommandValidator>());
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Application.Commands.RegisterBusiness.RegisterBusinessCommand>());
 
         // Register infrastructure services
         services.AddIdentityInfrastructure(configuration);

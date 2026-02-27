@@ -9,8 +9,6 @@ import { Alert } from "@/components/ui/Alert";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useAuth } from "@/hooks/useAuth";
 import { required, email, minLength, compose, phone } from "@/lib/validation/rules";
-import { rucValidationRule } from "@/lib/validation/ecuadorRuc";
-import { ApiException } from "@/types/api";
 import styles from "./RegisterForm.module.css";
 
 const initialValues = {
@@ -19,11 +17,6 @@ const initialValues = {
   firstName: "",
   lastName: "",
   phoneNumber: "",
-  businessName: "",
-  businessRuc: "",
-  businessAddress: "",
-  businessPhoneNumber: "",
-  businessEmail: "",
 };
 
 const validationRules = {
@@ -37,18 +30,12 @@ const validationRules = {
   firstName: [required("First name is required")],
   lastName: [required("Last name is required")],
   phoneNumber: [phone()],
-  businessName: [required("Business name is required")],
-  businessRuc: [compose(required("RUC is required"), rucValidationRule())],
-  businessAddress: [required("Business address is required")],
-  businessPhoneNumber: [phone()],
-  businessEmail: [email()],
 };
 
 export function RegisterForm() {
   const router = useRouter();
-  const { register, login } = useAuth();
+  const { signUpWithEmail } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const { getFieldProps, getFieldError, handleSubmit, isSubmitting } =
     useFormValidation({
@@ -57,34 +44,17 @@ export function RegisterForm() {
       onSubmit: async (formValues) => {
         setError(null);
         try {
-          await register({
-            email: formValues.email,
-            password: formValues.password,
-            firstName: formValues.firstName,
-            lastName: formValues.lastName,
-            phoneNumber: formValues.phoneNumber || undefined,
-            businessName: formValues.businessName,
-            businessRuc: formValues.businessRuc,
-            businessAddress: formValues.businessAddress,
-            businessPhoneNumber: formValues.businessPhoneNumber || undefined,
-            businessEmail: formValues.businessEmail || undefined,
-          });
+          await signUpWithEmail(
+            formValues.email,
+            formValues.password,
+            formValues.firstName,
+            formValues.lastName,
+            formValues.phoneNumber || undefined
+          );
 
-          setSuccess(true);
-
-          // Auto-login after registration
-          await login({
-            email: formValues.email,
-            password: formValues.password,
-          });
-
-          router.push("/dashboard");
-        } catch (err) {
-          if (err instanceof ApiException) {
-            setError(err.message);
-          } else {
-            setError("An unexpected error occurred. Please try again.");
-          }
+          router.push(`/verify-email?email=${encodeURIComponent(formValues.email)}`);
+        } catch (err: any) {
+          setError(err.message || "An unexpected error occurred. Please try again.");
         }
       },
     });
@@ -94,19 +64,13 @@ export function RegisterForm() {
       <div className={styles.header}>
         <h1 className={styles.title}>Create your account</h1>
         <p className={styles.subtitle}>
-          Register your business on GlowNow
+          Join the GlowNow community
         </p>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
-      {success && (
-        <Alert variant="success">
-          Account created successfully! Redirecting to dashboard...
-        </Alert>
-      )}
 
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Account Information</h2>
         <div className={styles.fields}>
           <div className={styles.row}>
             <FormField
@@ -154,54 +118,6 @@ export function RegisterForm() {
             hint="Optional"
             errorMessage={getFieldError("phoneNumber")}
             {...getFieldProps("phoneNumber")}
-          />
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Business Information</h2>
-        <div className={styles.fields}>
-          <FormField
-            label="Business Name"
-            type="text"
-            placeholder="Your Business Name"
-            errorMessage={getFieldError("businessName")}
-            {...getFieldProps("businessName")}
-          />
-
-          <FormField
-            label="RUC"
-            type="text"
-            placeholder="1234567890001"
-            hint="13-digit tax identification number"
-            errorMessage={getFieldError("businessRuc")}
-            {...getFieldProps("businessRuc")}
-          />
-
-          <FormField
-            label="Business Address"
-            type="text"
-            placeholder="Av. Example 123, Cuenca"
-            errorMessage={getFieldError("businessAddress")}
-            {...getFieldProps("businessAddress")}
-          />
-
-          <FormField
-            label="Business Phone"
-            type="tel"
-            placeholder="+593 9X XXX XXXX"
-            hint="Optional"
-            errorMessage={getFieldError("businessPhoneNumber")}
-            {...getFieldProps("businessPhoneNumber")}
-          />
-
-          <FormField
-            label="Business Email"
-            type="email"
-            placeholder="contact@business.com"
-            hint="Optional - defaults to your email"
-            errorMessage={getFieldError("businessEmail")}
-            {...getFieldProps("businessEmail")}
           />
         </div>
       </div>

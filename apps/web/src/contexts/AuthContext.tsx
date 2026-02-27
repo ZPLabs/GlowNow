@@ -1,5 +1,6 @@
 "use client";
 
+import "@/lib/auth/amplify";
 import {
   createContext,
   useCallback,
@@ -8,20 +9,26 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User, AuthState, LoginRequest, RegisterRequest } from "@/types/auth";
+import { 
+  signIn, 
+  signUp, 
+  confirmSignUp, 
+  signOut, 
+  getCurrentUser as getAmplifyUser,
+  fetchAuthSession,
+  signInWithRedirect
+} from 'aws-amplify/auth';
+import { Hub } from 'aws-amplify/utils';
+import type { User, AuthState, RegisterBusinessRequest } from "@/types/auth";
 import * as authApi from "@/lib/api/auth";
-import {
-  getStoredRefreshToken,
-  setStoredRefreshToken,
-  clearStoredRefreshToken,
-  isTokenExpired,
-} from "@/lib/auth/tokens";
 
 export interface AuthContextValue extends AuthState {
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, phoneNumber?: string) => Promise<void>;
+  confirmSignUpCode: (email: string, code: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  refreshSession: () => Promise<boolean>;
+  registerBusiness: (data: RegisterBusinessRequest) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,127 +39,117 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [tokenIssuedAt, setTokenIssuedAt] = useState<number | null>(null);
-  const [expiresIn, setExpiresIn] = useState<number | null>(null);
 
-  const isAuthenticated = !!user && !!accessToken;
+  const isAuthenticated = !!user;
 
-  const refreshSession = useCallback(async (): Promise<boolean> => {
-    const storedRefreshToken = getStoredRefreshToken();
-    if (!storedRefreshToken) {
-      return false;
-    }
-
+  const fetchProfile = useCallback(async () => {
     try {
-      const response = await authApi.refreshToken({
-        refreshToken: storedRefreshToken,
-      });
-
-      setAccessToken(response.accessToken);
-      setStoredRefreshToken(response.refreshToken);
-      setTokenIssuedAt(Date.now());
-      setExpiresIn(response.expiresIn);
-
-      const currentUser = await authApi.getCurrentUser(response.accessToken);
-      setUser(currentUser);
-
-      return true;
-    } catch {
-      clearStoredRefreshToken();
+      const profile = await authApi.getCurrentUser();
+      setUser(profile);
+    } catch (error) {
+      console.error('Failed to fetch user profile', error);
       setUser(null);
-      setAccessToken(null);
-      setTokenIssuedAt(null);
-      setExpiresIn(null);
-      return false;
     }
   }, []);
 
-  const login = useCallback(async (data: LoginRequest): Promise<void> => {
-    const response = await authApi.login(data);
+  const checkUser = useCallback(async () => {
+    try {
+      await getAmplifyUser();
+      await fetchProfile();
+    } catch {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchProfile]);
 
-    setAccessToken(response.accessToken);
-    setStoredRefreshToken(response.refreshToken);
-    setTokenIssuedAt(Date.now());
-    setExpiresIn(response.expiresIn);
+  useEffect(() => {
+    checkUser();
 
-    const currentUser = await authApi.getCurrentUser(response.accessToken);
-    setUser(currentUser);
-  }, []);
-
-  const register = useCallback(async (data: RegisterRequest): Promise<void> => {
-    await authApi.register(data);
-  }, []);
-
-  const logout = useCallback(async (): Promise<void> => {
-    if (accessToken) {
-      try {
-        await authApi.logout(accessToken);
-      } catch {
-        // Ignore logout errors - we'll clear local state anyway
+    const unsubscribe = Hub.listen('auth', ({ payload }) => {
+      switch (payload.event) {
+        case 'signedIn':
+          checkUser();
+          break;
+        case 'signedOut':
+          setUser(null);
+          break;
       }
-    }
+    });
 
-    clearStoredRefreshToken();
+    return () => unsubscribe();
+  }, [checkUser]);
+
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    await signIn({ username: email, password });
+    await checkUser();
+  }, [checkUser]);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string, firstName: string, lastName: string, phoneNumber?: string) => {
+    await signUp({
+      username: email,
+      password,
+      options: {
+        userAttributes: {
+          email,
+          given_name: firstName,
+          family_name: lastName,
+          ...(phoneNumber ? { phone_number: phoneNumber } : {}),
+        }
+      }
+    });
+  }, []);
+
+  const confirmSignUpCode = useCallback(async (email: string, code: string) => {
+    await confirmSignUp({ username: email, confirmationCode: code });
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      await signInWithRedirect({ provider: 'Google' });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'UserAlreadyAuthenticatedException') {
+        // Session already exists — refresh auth state instead of starting a new OAuth flow
+        await checkUser();
+        return;
+      }
+      throw err;
+    }
+  }, [checkUser]);
+
+  const logout = useCallback(async () => {
+    await signOut();
     setUser(null);
-    setAccessToken(null);
-    setTokenIssuedAt(null);
-    setExpiresIn(null);
-  }, [accessToken]);
+  }, []);
 
-  // Initialize auth state on mount
-  useEffect(() => {
-    const initAuth = async () => {
-      const success = await refreshSession();
-      if (!success) {
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-      }
-    };
-
-    initAuth();
-  }, [refreshSession]);
-
-  // Auto-refresh token before expiration
-  useEffect(() => {
-    if (!tokenIssuedAt || !expiresIn || !accessToken) {
-      return;
-    }
-
-    const checkAndRefresh = async () => {
-      if (isTokenExpired(expiresIn, tokenIssuedAt)) {
-        await refreshSession();
-      }
-    };
-
-    // Check every minute
-    const intervalId = setInterval(checkAndRefresh, 60 * 1000);
-
-    return () => clearInterval(intervalId);
-  }, [tokenIssuedAt, expiresIn, accessToken, refreshSession]);
+  const registerBusiness = useCallback(async (data: RegisterBusinessRequest) => {
+    await authApi.registerBusiness(data);
+    await fetchProfile();
+  }, [fetchProfile]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      accessToken,
       isAuthenticated,
       isLoading,
-      login,
-      register,
+      signInWithEmail,
+      signUpWithEmail,
+      confirmSignUpCode,
+      signInWithGoogle,
       logout,
-      refreshSession,
+      registerBusiness,
     }),
     [
       user,
-      accessToken,
       isAuthenticated,
       isLoading,
-      login,
-      register,
+      signInWithEmail,
+      signUpWithEmail,
+      confirmSignUpCode,
+      signInWithGoogle,
       logout,
-      refreshSession,
+      registerBusiness,
     ]
   );
 
