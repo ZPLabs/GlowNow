@@ -1,6 +1,6 @@
 # GlowNow
 
-Multi-tenant SaaS platform for booking and business management in the beauty and wellness industry — built for Ecuador, starting in Cuenca.
+In Multi-tenant SaaS platform for booking and business management in the beauty and wellness industry — built for Ecuador, starting in Cuenca.
 
 ## Why GlowNow?
 
